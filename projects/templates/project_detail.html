@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <h1>Project Detail for {{project.title}}</h1>
+  <p>Story</p>
+  {% if project.story %} 
+  <p>{project.story.content} </p>
+  {% elif  %}
+  <a href="{% url 'add-story' project_pk=project.pk %}">Add Story</a>
+  {% endif %}
+  <p>Blueprint</p>
+  # show current blueprint (filter in view)
+  # link to blueprint page pass the project_pk
+
+
+
+  <!-- so on ... -->
+</html>
