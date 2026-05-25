@@ -1,0 +1,36 @@
+story_title: "Little Red Riding Hood"
+design_sheets:
+  characters:
+    grandma: "Grandma"
+    little_red_riding_hood: "Little Red Riding Hood"
+    huntsman: "Huntsman"
+    wolf: "Wolf"
+    mother: "Mother"
+  backgrounds:
+    grandmas_house: "Grandma's House"
+    forest_trail: "Forest Trail"
+    home_village: "Home Village"
+
+scenes:
+  - sequence: 1
+    key: meet_little_red
+    duration: 7
+    narration: "Deep in a village lived a sweet girl in a red velvet hood. Everyone called her Little Red Riding Hood!"
+    image_prompt: "Wide shot on a sunny village street, Little Red Riding Hood mid-stride waving to someone off-frame, bright cheerful expression, warm midday light."
+    video_prompt: "Camera holds wide as Little Red Riding Hood walks through the village, waving cheerfully. Warm midday light, gentle ambient movement in the scene."
+    reference_image_keys:
+      - little_red_riding_hood
+      - home_village
+    dialogue: []
+
+  - sequence: 2
+    key: mothers_errand
+    duration: 8
+    narration: "One morning, her mother handed her a basket with cake and medicine for her sick Grandma."
+    description: "Mother hands Little Red Riding Hood a covered basket on the porch. Little Red Riding Hood listens attentively. She leaves carrying the basket."
+    prompt: "Medium two-shot on a cottage porch, Mother extending a wicker basket toward Little Red Riding Hood, Little Red Riding Hood reaching out with an attentive expression, soft morning light, basket held between them as the focal point, matching the style and character design of the reference images. No text, no watermark."
+    reference_image_keys:
+      - little_red_riding_hood
+      - mother
+    dialogue:
+      - mother: "Take this to your grandmother. Don't talk to any strangers, and stay on the path."

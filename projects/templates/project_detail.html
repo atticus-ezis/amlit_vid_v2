@@ -1,17 +1,20 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block content %}
   <h1>Project Detail for {{project.title}}</h1>
-  <p>Story</p>
-  {% if project.story %} 
-  <p>{project.story.content} </p>
-  {% elif  %}
-  <a href="{% url 'add-story' project_pk=project.pk %}">Add Story</a>
-  {% endif %}
-  <p>Blueprint</p>
-  # show current blueprint (filter in view)
-  # link to blueprint page pass the project_pk
+  <div name="story_display">
+    <h1>Story</h1>
+    {% if project.story %} 
+    <p>{project.story.content} </p>
+    {% elif  %}
+    <a href="{% url 'add-story' project_pk=project.pk %}">Add Story</a>
+    {% endif %}
+  </div>
+  <div name="blueprint_display">
+    <h1>Blueprint</h1>
+    # show current blueprint (filter in view)
+    # link to blueprint page pass the project_pk
+
+  </div>
 
 
-
-  <!-- so on ... -->
-</html>
+{% endblock %}

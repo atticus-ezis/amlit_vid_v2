@@ -1,18 +1,16 @@
-<!doctype html>
-<html>
-  <body>
-    <h1>New Project</h1>
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit">Create</button>
-    </form>
+{% extends "base.html" %}
+{% block content %}
+  <h1>New Project</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create</button>
+  </form>
 
-    <h2>Existing Projects</h2>
+  <h2>Existing Projects</h2>
     {% for project in existing_projects %}
       <a href="{% url 'project-detail' project_pk=project.pk %}">{{ project.title }}</a>
     {% empty %}
-      <p>No projects yet.</p>
+  <p>No projects yet.</p>
     {% endfor %}
-  </body>
-</html>
+{% endblock %}

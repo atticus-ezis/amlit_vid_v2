@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form method="post" id="edit-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" name="save" id="save-btn" disabled>Save Changes</button>
+</form>
+
+<script>
+    const form = document.getElementById("edit-form");
+    const textarea = form.querySelector("textarea");
+    const saveBtn = document.getElementById("save-btn");
+    const original = textarea.value;
+
+    textarea.addEventListener("input", () => {
+        saveBtn.disabled = textarea.value === original;
+    });
+</script>
+
+<form method="post">
+    {% csrf_token %}
+    {{ reprompt_form.as_p }}
+    <button type="submit" name="re_prompt">Re-Prompt</button>
+</form>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" name="submit">Submit and Continue</button>
+</form>
+
+{% endblock %}

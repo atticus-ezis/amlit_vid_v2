@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Blueprint for {{ story.project.title }}</h1>
+
+{% if existing_blueprints %}
+<p>Choose existing blueprint</p>
+<ul>
+    {% for blueprint in existing_blueprints %}
+    <li>
+        <a href="{% url 'blueprint-detail' blueprint_pk=blueprint.pk %}">
+            {{ blueprint.generation_type }} / {{ blueprint.review_status }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Generate</button>
+</form>
+{% endif %}
+
+{% endblock %}

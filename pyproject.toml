@@ -5,5 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic>=0.104.0",
     "django>=6.0.5",
+    "pytest-django>=4.0.0",
+    "pydantic>=2.13.4",
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+    "dotenv>=0.9.9",
+    "pyyaml>=6.0.3",
 ]

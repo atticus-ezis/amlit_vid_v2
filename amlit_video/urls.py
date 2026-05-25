@@ -16,10 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from projects.views import ProjectView, ProjectDetail
+from projects.views import project_view, project_detail
+from stories.views import story_view
+from blueprints.views import blueprint_view, blueprint_detail
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', ProjectView, name="home"),
-    path('project/<int:project_pk>/', ProjectDetail, name="project-detail")
+    path('', project_view, name="home"),
+    path('project/<int:project_pk>/', project_detail, name="project-detail"),
+    path('project/<int:project_pk>/add-story', story_view, name="add-story"),
+    path('story/<int:story_pk>/blueprint/', blueprint_view, name="blueprint"),
+    path('blueprint/<int:blueprint_pk>/', blueprint_detail, name="blueprint-detail"),
 ]
