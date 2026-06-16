@@ -4,16 +4,34 @@
   <div name="story_display">
     <h1>Story</h1>
     {% if project.story %} 
-    <p>{project.story.content} </p>
-    {% elif  %}
+    <p>{{project.story.content}} </p>
+    {% else  %}
     <a href="{% url 'add-story' project_pk=project.pk %}">Add Story</a>
     {% endif %}
   </div>
+  <!-- Blueprint -->
   <div name="blueprint_display">
     <h1>Blueprint</h1>
-    # show current blueprint (filter in view)
-    # link to blueprint page pass the project_pk
-
+    {% if blueprints %}
+      {% for blueprint in blueprints %}
+      <ul>
+          <li>Status: {{ blueprint.review_status }}</li>
+          <li>
+              <a href="{% url 'blueprint-detail' blueprint_pk=blueprint.pk %}">
+                  View Blueprint
+              </a>
+          </li>
+      </ul>
+      {% endfor %}
+    {% else %}
+        <p>No accepted blueprint available.</p>
+        <a href="{% url 'blueprint' story_pk=project.story.pk %}">Generate Blueprint</a>
+    {% endif %}
+  
+    <!-- Storyboard -->
+    <h1>Storyboard</h1>
+    <a href="{% url 'storyboard' blueprint_pk=accepted_blueprint.pk %}">View Storyboard</a>
+    
   </div>
 
 

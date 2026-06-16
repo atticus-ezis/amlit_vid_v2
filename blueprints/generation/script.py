@@ -1,5 +1,4 @@
 import anthropic
-import yaml
 from .schema import BlueprintSchema
 from django.conf import settings
 from stories.models import Story
@@ -75,26 +74,27 @@ def re_prompt_blueprint(re_prompt, original_blueprint, script_criteria):
 
 ########## save
 
-def save_blueprint(yaml_content: str, story: Story):
-    data = yaml.safe_load(yaml_content)
+def save_blueprint(yaml_content: dict, story: Story):
+    data = yaml_content  # already a dict from API tool use
     blueprint = Blueprint.objects.create(
         story=story,
-        content=yaml_content,
+        content=data,
     )
-    for character in data["design_sheets"]["characters"]:
-        key, name = character.items()
-        Character.objects.create(
+
+    character_map = {}
+    for key, name in data["design_sheets"]["characters"].items():
+        character = Character.objects.create(
             blueprint=blueprint,
             key=key,
-            name=name
+            name=name,
         )
+        character_map[key] = character
 
-    for background in data["design_sheets"]["backgrounds"]:
-        key, name = background.items()
+    for key, name in data["design_sheets"]["backgrounds"].items():
         Background.objects.create(
             blueprint=blueprint,
             key=key,
-            name=name
+            name=name,
         )
 
     for scene in data["scenes"]:
@@ -103,15 +103,16 @@ def save_blueprint(yaml_content: str, story: Story):
             sequence=scene["sequence"],
             key=scene["key"],
             duration=scene["duration"],
+            narration=scene["narration"],
             image_prompt=scene["image_prompt"],
             video_prompt=scene["video_prompt"],
-            reference_image_keys=scene["reference_image_keys"]
+            reference_image_keys=scene["reference_image_keys"],
         )
-        for key, line in scene["dialouge"].items():
-            dialouge_object = Dialogue.objects.create(
+        for char_key, line in scene["dialogue"].items():
+            Dialogue.objects.create(
                 scene=scene_object,
-                character=key,
-                line=line
+                character=character_map[char_key],
+                line=line,
             )
     return blueprint    
 

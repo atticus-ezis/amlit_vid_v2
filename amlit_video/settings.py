@@ -18,6 +18,7 @@ load_dotenv()
 
 ############## ADD KEYS HERE #################
 ANTHROPIC_KEY=os.environ['ANTHROPIC_API_KEY'] 
+OPENAI_KEY=os.environ['OPENAI_API_KEY']
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,7 +33,7 @@ SECRET_KEY = 'django-insecure-x4wjj5u(b=8k-7&dr^&rygmf2wvyxoxdlg01a=u0p=)&p(_g^$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition

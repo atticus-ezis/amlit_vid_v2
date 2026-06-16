@@ -13,4 +13,6 @@ dependencies = [
     "ruff>=0.15.13",
     "dotenv>=0.9.9",
     "pyyaml>=6.0.3",
+    "openai>=2.38.0",
+    "pillow>=12.2.0",
 ]

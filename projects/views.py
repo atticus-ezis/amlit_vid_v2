@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import ProjectForm
 from .models import Project
+from blueprints.models import Blueprint
 
 
 def project_view(request):
@@ -18,5 +19,9 @@ def project_view(request):
 
 def project_detail(request, project_pk):
     project = get_object_or_404(Project, pk=project_pk)
-    return render(request, "project_detail.html", {"project": project})
+    blueprints = project.story.blueprints.all()
+    accepted_blueprint = blueprints.filter(review_status=Blueprint.ReviewStatus.ACCEPTED).first()
+    context = {"project": project, "blueprints": blueprints, "accepted_blueprint": accepted_blueprint}
+    print(f"DEBUG Blueprints {accepted_blueprint}")
+    return render(request, "project_detail.html", context)
 

@@ -1,15 +1,32 @@
 from django.db import models
+from pydantic import ValidationError
+
+def image_upload_path(instance, filename):
+    blueprint_slug = instance.blueprint.story.project.slug
+    return (
+        f"{blueprint_slug}/"
+        f"{instance.generation_type}/"
+        f"{filename}"
+    )
 
 class Image(models.Model):
 
     class DeviceType(models.TextChoices):
-        PHONE = "Phone", "phone"
-        DESKTOP = "Desktop", "desktop"
+        PHONE = "phone", "Phone"
+        DESKTOP = "desktop", "Desktop"
 
+    class SizeChoice(models.TextChoices):
+        LANDSCAPE = "1536x1024",
+        PORTRAIT = "1024x1536", 
     class GenerationType(models.TextChoices):
         INITIAL = "initial", "Initial"
         RE_PROMPT = "re_prompt", "Re-Prompt"
         USER_UPLOAD = "user_upload", "User Upload"
+
+    class ImageType(models.TextChoices):
+        CHARACTER_DESIGN = "character_design_sheet"
+        BACKGROUND_DESIGN = "background_design_sheet"
+        STORYBOARD = "storyboard"
 
     class ReviewStatus(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -19,14 +36,15 @@ class Image(models.Model):
     class AIModels(models.TextChoices):
         GPT_IMAGE_1 = "gpt-image-1"
 
-    character = models.ForeignKey('blueprints.Character', null=True, blank=True, on_delete=models.CASCADE, related_name="images")
+    # can use - blueprint 
+    characters = models.ManyToManyField('blueprints.Character', blank=True, related_name="images")
     background = models.ForeignKey('blueprints.Background', null=True, blank=True, on_delete=models.CASCADE, related_name="images")
     scene = models.ForeignKey('blueprints.Scene', null=True, blank=True, on_delete=models.CASCADE, related_name="images")
-    ##### 
+
 
     key = models.SlugField()
 
-    relative_path = models.CharField()
+    image_file = models.ImageField(upload_to=image_upload_path)
 
     ai_model = models.CharField(
         max_length=100,
@@ -40,8 +58,9 @@ class Image(models.Model):
         blank=True,
     )
     
-    device_type = models.CharField(
-	    choices=DeviceType.choices,
+    size = models.CharField(
+	    choices=SizeChoice.choices,
+        default=SizeChoice.LANDSCAPE.value
     )
 
     accuracy_score = models.IntegerField(
@@ -68,6 +87,10 @@ class Image(models.Model):
         default=GenerationType.INITIAL,
     )
 
+    style = models.CharField(
+        max_length=100
+    )
+
 	# describe why it was rejected or got the score it did
     review_note = models.TextField(
         blank=True,
@@ -76,42 +99,43 @@ class Image(models.Model):
     # describe what youy did to generate the photo created outside the app
     upload_note = models.TextField(
 	    blank=True,
-	  )
+	)
 
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
     
     
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=(
-                    models.Q(character__isnull=False, background__isnull=True, scene__isnull=True) |
-                    models.Q(character__isnull=True, background__isnull=False, scene__isnull=True) |
-                    models.Q(character__isnull=True, background__isnull=True, scene__isnull=False)
-                ),
-                name='image_belongs_to_exactly_one_owner'
-            ),
-            models.CheckConstraint(
-                condition=models.Q(generation_type='user_upload') | models.Q(upload_note__isnull=True),
-                name='upload_note_required_when_user_uploads'
-            ),
-            models.CheckConstraint(
-                condition=models.Q(generation_type='user_upload') | models.Q(prompt__isnull=False),
-                name='prompt_not_required_for_user_upload'
-            ),
-        ]
-
 
     @property
-    def image_type(self):
-        if self.character_id:
-            return "character"
-        elif self.background_id:
-            return "background"
-        return "scene"
+    def blueprint(self):
+        if self.scene:
+            return self.scene.blueprint
 
+        if self.background:
+            return self.background.blueprint
+
+        first_character = self.characters.first()
+        if first_character:
+            return first_character.blueprint
+
+        raise ValueError("Image has no associated blueprint")
+    
+    # fix this logic
+    @property 
+    def get_key(self):
+        last_generation = self.previous_generation
+        if last_generation:
+            old_key = last_generation.key
+            if last_generation.is_root_generation():
+                return old_key+"_V1"
+            
+            sequence = int(old_key[-1]) + 1
+            return old_key[:-1] + sequence
+        else: 
+            return self.key
+
+    
     def serialize_reference(self):
         return {
             "id": self.id,
@@ -145,8 +169,7 @@ class Image(models.Model):
 
         if self.review_note:
             data["review_note"] = self.review_note
-          
-		     
+               
     def is_root_generation(self):
         return self.previous_generation is None
 
@@ -204,3 +227,18 @@ class Image(models.Model):
 
             "generation_chain": records,
         }
+
+    def clean(self):
+        super().clean()
+
+        has_characters = self.characters.exists() if self.pk else bool(self.characters.all())
+        has_background = self.background is not None
+        has_scene = self.scene is not None
+
+        generation_count = sum([has_characters, has_background, has_scene])
+        if generation_count != 1:
+            raise ValidationError(f"Image must belong to exactly 1 not {generation_count} type of either 'characters' 'background' or 'scene'")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

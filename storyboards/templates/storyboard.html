@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="post">
+
+    <!-- default controls -->
+    <fieldset>
+        <label>
+            Size
+            <select name="image_size">
+                <option value="landscape">Landscape</option>
+                <option value="portrait">Portrait</option>
+            </select>
+        </label>
+        <label>
+            Style
+            <select name="image_style">
+                <option value="pixar">Pixar</option>
+            </select>
+        </label>
+    </fieldset>
+
+    <div name="character_design_block">
+        <h1>Character Design</h1>
+        <div name="image_grid_display">
+            {% for image in existing_character_sheets %}
+                <h1>{{ image.key }}</h1>
+                <img src="{{ image.image_file.url }}">
+            {% endfor %}
+        </div>
+        <div name="progress">{{ completed_characters }}</div>
+        <button name="action" value="generate_character_sheets" type="submit">Generate Characters</button>
+    </div>
+
+    <div name="background_block">
+        <h1>Backgrounds</h1>
+        <div name="background_grid_display">
+            {% for image in background_design_images %}
+                <h1>{{ image.key }}</h1>
+                <img src="{{ image.image_file.url }}">
+            {% endfor %}
+        </div>
+        <div name="progress">{{ completed_backgrounds }}</div>
+        <button name="action" value="generate_backgrounds" type="submit">Generate Backgrounds</button>
+    </div>
+
+    <div name="scene_block">
+        <h1>Scenes</h1>
+        <div name="scene_grid_display">
+            {% for image in scene_images %}
+                <h1>{{ image.key }}</h1>
+                <img src="{{ image.image_file.url }}">
+            {% endfor %}
+        </div>
+        <div name="progress">{{ completed_scenes }}</div>
+        <button name="action" value="generate_next_scene" type="submit">Generate Next Scene</button>
+    </div>
+
+</form>
+
+{% endblock %}
+    

@@ -6,6 +6,7 @@ from pathlib import Path
 from blueprints.generation.script import get_blueprint, save_blueprint, re_prompt_blueprint
 from .models import Blueprint
 from .forms import BlueprintRepromptForm, BlueprintDetailForm
+from django.db import transaction
 
 prompt_markdown = (Path(__file__).parent / "generation" / "prompt.md").read_text()
 
@@ -54,9 +55,15 @@ def blueprint_detail(request, blueprint_pk):
                 return redirect("blueprint-detail", blueprint_pk=new_blueprint.pk)
 
         elif "submit" in request.POST:
-            blueprint.review_status = Blueprint.ReviewStatus.ACCEPTED
-            blueprint.save()
-            return redirect("design-sheets", blueprint_pk=blueprint.pk)
+            with transaction.atomic():
+                blueprint.story.blueprints.filter(
+                    review_status=Blueprint.ReviewStatus.ACCEPTED
+                ).exclude(
+                    pk=blueprint.pk
+                ).update(review_status=Blueprint.ReviewStatus.PENDING)
+            
+                blueprint.save()
+                return redirect("storyboard", blueprint_pk=blueprint.pk)
 
         elif "re_prompt" in request.POST:
             reprompt_form = BlueprintRepromptForm(request.POST)

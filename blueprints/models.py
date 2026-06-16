@@ -1,5 +1,4 @@
 import yaml
-from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.db import models
 from stories.models import Story
@@ -31,6 +30,9 @@ class Blueprint(models.Model):
     )
     re_prompt = models.TextField(max_length=500, null=True, blank=True)
 
+    def __str__(self):
+        return f"Blueprint for {self.story}"
+
     def as_yaml(self) -> str:
         return yaml.dump(
             self.content,
@@ -59,6 +61,8 @@ class Character(models.Model):
     name = models.CharField(max_length=255)
     voice_id = models.TextField(null=True, blank=True)
     # character.images
+    def __str__(self):
+        return self.name
 
 
 class Background(models.Model):
@@ -66,6 +70,9 @@ class Background(models.Model):
     key = models.SlugField(max_length=100)
     name = models.CharField(max_length=255)
     # background.images
+
+    def __str__(self):
+        return self.name
 
 
 class Scene(models.Model):
@@ -76,8 +83,12 @@ class Scene(models.Model):
     image_prompt = models.CharField(max_length=500) # prompt
     video_prompt = models.CharField(max_length=500)
     narration = models.TextField()
+
     reference_image_keys = models.JSONField(default=list)
     # scene.images
+
+    def __str__(self):
+        return f"Scene {self.sequence}: {self.key}"
 
     # pass to generate image
     def get_reference_images(self):
@@ -101,3 +112,6 @@ class Dialogue(models.Model):
     scene = models.ForeignKey(Scene, on_delete=models.CASCADE, related_name="dialogues")
     character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="dialogues")
     line = models.TextField()
+
+    def __str__(self):
+        return f"{self.character}: {self.line[:50]}"
