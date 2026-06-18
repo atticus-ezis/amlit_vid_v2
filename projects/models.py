@@ -22,3 +22,6 @@ class Project(models.Model):
     def root_path(self):
         return settings.MEDIA_ROOT / self.slug
     
+    def __str__(self):
+        return self.title
+    

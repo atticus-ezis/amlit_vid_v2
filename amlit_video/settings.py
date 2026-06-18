@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'projects',
     'stories',
     'blueprints',
-    'images',
     'design_sheets',
     'storyboards',
 

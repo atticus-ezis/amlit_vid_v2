@@ -2,7 +2,7 @@ from typing import Optional
 from amlit_video.settings import OPENAI_KEY
 from openai import OpenAI, BadRequestError
 from pathlib import Path
-from images.models import Image
+from .models import Image
 
 sizes = {
     Image.DeviceType.DESKTOP: ["1536x1024"],

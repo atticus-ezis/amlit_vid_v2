@@ -18,7 +18,7 @@ def blueprint_view(request, story_pk):
         "story": story,
         "existing_blueprints": existing_blueprints,
     }
-    if request.method == 'POST' and not existing_blueprints:
+    if request.method == 'POST' and not existing_blueprints.exists():
         prompt = prompt_markdown.replace("{{insert story here}}", story.content)
         try:
             validated_blueprint_data = get_blueprint(prompt=prompt)
@@ -33,9 +33,11 @@ def blueprint_view(request, story_pk):
 
 def blueprint_detail(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
+    existing_blueprints = Blueprint.objects.filter(story=blueprint.story).exclude(pk=blueprint.pk)
 
     context = {
         "blueprint": blueprint,
+        "existing_blueprints": existing_blueprints,
         "form": BlueprintDetailForm(initial={"yaml_content": blueprint.as_yaml()}),
         "reprompt_form": BlueprintRepromptForm(),
     }
@@ -47,11 +49,9 @@ def blueprint_detail(request, blueprint_pk):
             context["form"] = form
             if form.is_valid():
                 content = yaml.safe_load(form.cleaned_data["yaml_content"])
-                new_blueprint = Blueprint.objects.create(
-                    story=blueprint.story,
-                    content=content,
-                    generation_type=Blueprint.GenerationType.MANUAL_EDIT,
-                )
+                blueprint.content = content
+                blueprint.generation_type=Blueprint.GenerationType.MANUAL_EDIT,
+                blueprint.save()
                 return redirect("blueprint-detail", blueprint_pk=new_blueprint.pk)
 
         elif "submit" in request.POST:
@@ -61,7 +61,7 @@ def blueprint_detail(request, blueprint_pk):
                 ).exclude(
                     pk=blueprint.pk
                 ).update(review_status=Blueprint.ReviewStatus.PENDING)
-            
+                blueprint.review_status=Blueprint.ReviewStatus.ACCEPTED
                 blueprint.save()
                 return redirect("storyboard", blueprint_pk=blueprint.pk)
 

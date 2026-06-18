@@ -2,6 +2,18 @@
 
 {% block content %}
 
+{% if existing_blueprints %}
+<p>Choose from existing</p>
+<form>
+    {% csrf_token %}
+    <select onchange="location = this.value;">
+        {% for blueprint in existing_blueprints %}
+            <option value="{% url 'blueprint-detail' blueprint_pk=blueprint.pk %}">{{blueprint}}</option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}
+
 <form method="post" id="edit-form">
     {% csrf_token %}
     {{ form.as_p }}

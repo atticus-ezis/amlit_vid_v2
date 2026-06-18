@@ -24,7 +24,7 @@ CONTENT (children ages 4–8)
 
 NAMING
 - Every scene `key` is unique, snake_case, describes the beat
-- Character and background keys in design_sheets are snake_case
+- Character and background keys in design_sheets are snake_case and values are human-readable names. Example: "little_red_riding_hood: "Little Red Riding Hood"
 - reference_image_keys must resolve to either a design_sheet key OR a 
 prior scene `key`
 

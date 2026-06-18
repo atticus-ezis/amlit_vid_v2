@@ -30,8 +30,13 @@ class Blueprint(models.Model):
     )
     re_prompt = models.TextField(max_length=500, null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
-        return f"Blueprint for {self.story}"
+        # query all blueprints with matching story
+        return f"Blueprint for {self.story.project.title}: {self.review_status} {self.updated_at:%Y-%m-%d %H:%M}"
+
 
     def as_yaml(self) -> str:
         return yaml.dump(

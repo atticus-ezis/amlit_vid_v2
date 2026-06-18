@@ -1,6 +1,6 @@
 import base64
 import logging
-from images.models import Image
+from .models import Image
 from blueprints.models import Blueprint
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, render
@@ -19,12 +19,15 @@ def storyboard_view(request, blueprint_pk):
     blueprint=get_object_or_404(Blueprint, pk=blueprint_pk)
 
     if request.method=="POST":
+        print("post request started")
         # add these to settings later
         selected_style = request.POST.get("image_style")
         style = styles[selected_style]
         size = Image.SizeChoice.LANDSCAPE if request.POST.get("image_size") == "landscape" else Image.SizeChoice.PORTRAIT
+        action = request.POST.get("action")
 
-        if "generate_character_sheets" in request.POST:
+        if action == "generate_character_sheets":
+            print("DEBUG: generating character sheet...")
             # creates the first batch of INITIAL images
             characters=blueprint.characters.all()
             number_of_needed_sheets=(len(characters) + 4) // 5 
@@ -39,11 +42,13 @@ def storyboard_view(request, blueprint_pk):
                 existing_character_ids = completed_sheets.values_list('characters__id', flat=True)
                 ungenerated_characters = characters.exclude(id__in=existing_character_ids)
                 try:
-            
+                    print("generating new sheets..")
                     character_sheet_objects = generate_character_design_sheet_images(characters=ungenerated_characters, size=size.value, style=style)
                     print(f"Completed {len(character_sheet_objects)} of {number_of_needed_sheets}")
                 except ValueError as e:
                     messages.error(request, str(e))
+            else:
+                print("DEBUG: sheet(s) exist")
                     
    
     existing_character_sheets=Image.objects.filter(
@@ -79,9 +84,12 @@ def generate_character_design_sheet_images(characters: list[QuerySet], size: str
     for i in range(0, character_count, batch_number):
         try: 
             with transaction.atomic():
-                character_batch = characters[i:i+batch_number]
+                character_batch = list(characters[i:i+batch_number])
                 prompt=get_character_design_sheet_prompt(characters=character_batch, style=style)
+                print(f"DEBUG: prompt... {prompt}")
+                print(f"waiting for ai...")
                 response=openai_generation(prompt=prompt, size=size)
+                print(F"OPEN AI Response{response}")
 
                 image_bytes = base64.b64decode(response["image_64"])
                 filename=f"{project_slug}_character_design_sheet_{image_count}.png"
@@ -92,6 +100,7 @@ def generate_character_design_sheet_images(characters: list[QuerySet], size: str
                     prompt=prompt,
                     size=response["size"],
                     style=style,
+                    image_type=Image.ImageType.CHARACTER_DESIGN,
                 )
                 img.characters.set(character_batch)
                 img.image_file.save(
@@ -101,6 +110,7 @@ def generate_character_design_sheet_images(characters: list[QuerySet], size: str
                 )
                 images.append(img)
                 image_count+=1
+                print(f"DEBUG: saved image {img.key}: url -> {img.image_file.url}")
         except Exception:
             logger.exception(
                 "Failed generating character design sheets for project %s",
@@ -112,7 +122,7 @@ def generate_character_design_sheet_images(characters: list[QuerySet], size: str
         
 
 def get_character_design_sheet_prompt(characters: QuerySet, style: str):
-    first_char = characters.first()
+    first_char = characters[0]
     if not first_char:
         raise ValueError("No character in prompt")
     story_title = first_char.blueprint
