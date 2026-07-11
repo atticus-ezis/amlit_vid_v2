@@ -37,13 +37,13 @@ def blueprint_api_call(prompt, model=models["opus"], system=SYSTEM):
 
 def yaml_error_catch_reprompt(yaml_response):
     max_tries = 3
-    last_error = None
+    fromat_errors = []
     while max_tries > 0:
         try:
             BlueprintSchema.model_validate(yaml_response)
             return yaml_response
         except Exception as e:
-            last_error = e
+            fromat_errors.append(f"- {e}/n")
             max_tries -= 1
             retry_system = '''
             You correct yaml formatting errors for the provided yaml and error message.
@@ -51,7 +51,7 @@ def yaml_error_catch_reprompt(yaml_response):
             '''
             retry_prompt = f"Formatting error: {e}\n Original yaml: {yaml_response}"
             yaml_response = blueprint_api_call(system=retry_system, prompt=retry_prompt, model=models["sonnet"])
-    raise ValueError(f"Blueprint generation failed after 3 re-prompts.\n Error: {last_error}\n YAML: {yaml_response}") from last_error
+    raise ValueError(f"Blueprint generation failed after 3 re-prompts.\n Errors: {fromat_errors}\n YAML: {yaml_response}") from last_error
     
 
 def get_blueprint(prompt):
@@ -75,11 +75,30 @@ def re_prompt_blueprint(re_prompt, original_blueprint, script_criteria):
 ########## save
 
 def save_blueprint(yaml_content: dict, story: Story):
-    data = yaml_content  # already a dict from API tool use
-    blueprint = Blueprint.objects.create(
-        story=story,
-        content=data,
+    data = yaml_content
+    existing_blueprint = (
+        Blueprint.objects.filter(story=story)
+        .order_by("-updated_at")
+        .first()
     )
+    # if existing_blueprint and existing_blueprint.content == data:
+    #     return existing_blueprint
+    
+    if existing_blueprint:
+        blueprint = existing_blueprint
+        blueprint.content = data
+        blueprint.save()
+
+        # delete old children (to avoid duplicates)
+        blueprint.characters.all().delete()
+        blueprint.backgrounds.all().delete()
+        blueprint.scenes.all().delete()
+    else:
+        blueprint = Blueprint.objects.create(
+            story=story,
+            content=data,
+        )
+
 
     character_map = {}
     for key, name in data["design_sheets"]["characters"].items():

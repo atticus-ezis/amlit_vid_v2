@@ -1,7 +1,7 @@
 import yaml
 from django import forms
 from pydantic import ValidationError as PydanticValidationError
-from blueprints.generation.schema import BlueprintSchema
+from blueprints.schema import BlueprintSchema
 
 
 class BlueprintDetailForm(forms.Form):

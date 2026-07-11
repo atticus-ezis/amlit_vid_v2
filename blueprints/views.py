@@ -3,12 +3,14 @@ from django.contrib import messages
 from stories.models import Story
 from django.shortcuts import get_object_or_404, render, redirect
 from pathlib import Path
-from blueprints.generation.script import get_blueprint, save_blueprint, re_prompt_blueprint
+from blueprints.script import get_blueprint, save_blueprint, re_prompt_blueprint
 from .models import Blueprint
 from .forms import BlueprintRepromptForm, BlueprintDetailForm
 from django.db import transaction
+from blueprints.schema import BlueprintSchema
+from django.contrib import messages
 
-prompt_markdown = (Path(__file__).parent / "generation" / "prompt.md").read_text()
+prompt_markdown = (Path(__file__).parent / "prompt.md").read_text()
 
 
 def blueprint_view(request, story_pk):
@@ -43,19 +45,24 @@ def blueprint_detail(request, blueprint_pk):
     }
 
     if request.method == "POST":
-
         if "save" in request.POST:
             form = BlueprintDetailForm(request.POST)
             context["form"] = form
             if form.is_valid():
-                content = yaml.safe_load(form.cleaned_data["yaml_content"])
-                blueprint.content = content
-                blueprint.generation_type=Blueprint.GenerationType.MANUAL_EDIT,
-                blueprint.save()
-                return redirect("blueprint-detail", blueprint_pk=new_blueprint.pk)
+                try:
+                    content = yaml.safe_load(form.cleaned_data["yaml_content"])
+                    BlueprintSchema.model_validate(content)
+                    blueprint.content = content
+                    blueprint.generation_type=Blueprint.GenerationType.MANUAL_EDIT,
+                    blueprint.save()
+                except Exception as e:
+                    messages.error(request, str(e))
+                return redirect("blueprint-detail", blueprint_pk=new_blueprint.pk, context=context)
 
+        # save the blueprint
         elif "submit" in request.POST:
             with transaction.atomic():
+                # change status of existing blueprint if ACCEPTED
                 blueprint.story.blueprints.filter(
                     review_status=Blueprint.ReviewStatus.ACCEPTED
                 ).exclude(
@@ -63,6 +70,7 @@ def blueprint_detail(request, blueprint_pk):
                 ).update(review_status=Blueprint.ReviewStatus.PENDING)
                 blueprint.review_status=Blueprint.ReviewStatus.ACCEPTED
                 blueprint.save()
+                blueprint = save_blueprint(yaml_content=blueprint.content, story=blueprint.story)
                 return redirect("storyboard", blueprint_pk=blueprint.pk)
 
         elif "re_prompt" in request.POST:

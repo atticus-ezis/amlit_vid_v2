@@ -14,6 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
+
 from django.contrib import admin
 from django.urls import path
 from projects.views import project_view, project_detail
@@ -30,3 +33,5 @@ urlpatterns = [
     path('blueprint/<int:blueprint_pk>/', blueprint_detail, name="blueprint-detail"),
     path('blueprint/<int:blueprint_pk>/storybaord/', storyboard_view, name="storyboard"),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

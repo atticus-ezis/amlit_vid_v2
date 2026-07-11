@@ -131,18 +131,18 @@ class Image(models.Model):
         raise ValueError("Image has no associated blueprint")
     
     # fix this logic
-    @property 
-    def get_key(self):
-        last_generation = self.previous_generation
-        if last_generation:
-            old_key = last_generation.key
-            if last_generation.is_root_generation():
-                return old_key+"_V1"
+    # @property 
+    # def get_key(self):
+    #     last_generation = self.previous_generation
+    #     if last_generation:
+    #         old_key = last_generation.key
+    #         if last_generation.is_root_generation():
+    #             return old_key+"_V1"
             
-            sequence = int(old_key[-1]) + 1
-            return old_key[:-1] + sequence
-        else: 
-            return self.key
+    #         sequence = int(old_key[-1]) + 1
+    #         return old_key[:-1] + sequence
+    #     else: 
+    #         return self.key
 
     
     def serialize_reference(self):
@@ -237,17 +237,17 @@ class Image(models.Model):
             "generation_chain": records,
         }
 
-    def clean(self):
-        super().clean()
+    # def clean(self):
+    #     super().clean()
 
-        has_characters = self.characters.exists() if self.pk else bool(self.characters.all())
-        has_background = self.background is not None
-        has_scene = self.scene is not None
+    #     has_characters = self.characters.exists() if self.pk else bool(self.characters.all())
+    #     has_background = self.background is not None
+    #     has_scene = self.scene is not None
 
-        generation_count = sum([has_characters, has_background, has_scene])
-        if generation_count != 1:
-            raise ValidationError(f"Image must belong to exactly 1 not {generation_count} type of either 'characters' 'background' or 'scene'")
+    #     generation_count = sum([has_characters, has_background, has_scene])
+    #     if generation_count != 1:
+    #         raise ValidationError(f"Image must belong to exactly 1 not {generation_count} type of either 'characters' 'background' or 'scene'")
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     self.full_clean()
