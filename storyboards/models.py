@@ -4,7 +4,7 @@ from django.db import models
 
 def image_upload_path(instance, filename):
     blueprint_slug = instance.blueprint.story.project.slug
-    return f"{blueprint_slug}/{instance.generation_type}/{filename}"
+    return f"{blueprint_slug}/{instance.image_type}/{instance.generation_type}/{filename}"
 
 
 class Image(models.Model):

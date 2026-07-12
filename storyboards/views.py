@@ -19,6 +19,7 @@ batch_number = 5
 # todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
+    needed_character_sheets = (len(blueprint.characters.all()) + 4) // 5
 
     if request.method == "POST":
         print("post request started")
@@ -34,9 +35,6 @@ def storyboard_view(request, blueprint_pk):
 
         if action == "generate_character_sheets":
             print("DEBUG: generating character sheet...")
-            # creates the first batch of INITIAL images
-            characters = blueprint.characters.all()
-            number_of_needed_sheets = (len(characters) + 4) // batch_number
             completed_sheets = (
                 Image.objects.filter(
                     characters__blueprint=blueprint,
@@ -48,10 +46,8 @@ def storyboard_view(request, blueprint_pk):
                 .count()
             )
 
-            # both are 0...
-            # needed is 1 and completed is 5
-            print(f"needed {number_of_needed_sheets} completed {completed_sheets}")
-            if number_of_needed_sheets != completed_sheets:
+            print(f"needed {needed_character_sheets} completed {completed_sheets}")
+            if needed_character_sheets != completed_sheets:
                 print("Images NEEDED! Generating images")
                 existing_character_ids = completed_sheets.values_list(
                     "characters__id", flat=True
@@ -69,13 +65,13 @@ def storyboard_view(request, blueprint_pk):
                 except ValueError as e:
                     messages.error(request, str(e))
             else:
-                print("DEBUG: sheet(s) exist")
+                print("DEBUG: sheet(s) already exist!")
                 print(f"Existing... \n{completed_sheets}")
 
     existing_character_sheets = (
         Image.objects.filter(characters__in=blueprint.characters.all())
         .exclude(generation_type=Image.ReviewStatus.REJECTED)
-        .distinct()
+        .distinct().count()
     )
 
     print(f"Existing character sheets {existing_character_sheets}")
@@ -90,6 +86,8 @@ def storyboard_view(request, blueprint_pk):
 
     context = {
         "existing_character_sheets": existing_character_sheets,
+        "needed_character_sheets": needed_character_sheets
+        # needed_character_sheets (int)
         # "existing_background_sheets": existing_background_sheets,
         # "existing_scenes": existing_scenes
     }
