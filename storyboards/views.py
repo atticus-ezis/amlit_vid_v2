@@ -19,7 +19,8 @@ batch_number = 5
 # todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
-    needed_character_sheets = (len(blueprint.characters.all()) + 4) // 5
+    characters = blueprint.characters.all()
+    needed_character_sheets = (len(characters) + 4) // 5
 
     if request.method == "POST":
         print("post request started")
@@ -46,7 +47,6 @@ def storyboard_view(request, blueprint_pk):
                 .count()
             )
 
-            print(f"needed {needed_character_sheets} completed {completed_sheets}")
             if needed_character_sheets != completed_sheets:
                 print("Images NEEDED! Generating images")
                 existing_character_ids = completed_sheets.values_list(
@@ -56,12 +56,10 @@ def storyboard_view(request, blueprint_pk):
                     id__in=existing_character_ids
                 )
                 try:
-                    character_sheet_objects = generate_character_design_sheet_images(
+                    generate_character_design_sheet_images(
                         characters=ungenerated_characters, size=size.value, style=style
                     )
-                    print(
-                        f"Completed {len(character_sheet_objects)} of {number_of_needed_sheets}"
-                    )
+
                 except ValueError as e:
                     messages.error(request, str(e))
             else:
@@ -71,10 +69,9 @@ def storyboard_view(request, blueprint_pk):
     existing_character_sheets = (
         Image.objects.filter(characters__in=blueprint.characters.all())
         .exclude(generation_type=Image.ReviewStatus.REJECTED)
-        .distinct().count()
+        .distinct()
     )
 
-    print(f"Existing character sheets {existing_character_sheets}")
 
     # existing_background_sheets=Image.objects.filter(
     #     background__in=blueprint.backgrounds.all()
@@ -106,7 +103,6 @@ def generate_character_design_sheet_images(
         )
 
     project_slug = first_char.blueprint.story.project.slug
-    images = []
     for i in range(0, character_count, batch_number):
         try:
             with transaction.atomic():
@@ -136,14 +132,13 @@ def generate_character_design_sheet_images(
                     ContentFile(image_bytes),
                     save=True,
                 )
-                images.append(img)
                 image_count += 1
                 print(f"DEBUG: saved image {img.key}: url -> {img.image_file.url}")
         except Exception:
             logger.exception(
                 "Failed generating character design sheets for project %s", project_slug
             )
-    return images
+    
 
 
 def get_character_design_sheet_prompt(characters: QuerySet, style: str):
