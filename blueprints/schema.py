@@ -1,6 +1,7 @@
 from typing import Annotated
 from pydantic import BaseModel, Field, model_validator
 
+
 class SceneSchema(BaseModel):
     sequence: int
     key: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
@@ -11,16 +12,18 @@ class SceneSchema(BaseModel):
     reference_image_keys: Annotated[list[str], Field(min_length=1, max_length=3)]
     dialogue: dict[str, str]
 
+
 class DesignSheetsSchema(BaseModel):
     characters: dict[str, str]
     backgrounds: dict[str, str]
+
 
 class BlueprintSchema(BaseModel):
     story_title: str
     design_sheets: DesignSheetsSchema
     scenes: Annotated[list[SceneSchema], Field(min_length=8, max_length=13)]
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_keys(self):
         character_keys = set(self.design_sheets.characters.keys())
         background_keys = set(self.design_sheets.backgrounds.keys())
@@ -43,6 +46,7 @@ class BlueprintSchema(BaseModel):
             seen_scene_keys.add(scene.key)
 
         return self
+
 
 # client = anthropic.Anthropic()
 

@@ -6,11 +6,13 @@ from blueprints.schema import BlueprintSchema
 
 class BlueprintDetailForm(forms.Form):
     yaml_content = forms.CharField(
-        widget=forms.Textarea(attrs={
-            "rows": 30,
-            "class": "form-control font-monospace",
-            "style": "white-space: pre; overflow-wrap: normal; overflow-x: scroll;",
-        }),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 30,
+                "class": "form-control font-monospace",
+                "style": "white-space: pre; overflow-wrap: normal; overflow-x: scroll;",
+            }
+        ),
         label="Blueprint YAML",
     )
 

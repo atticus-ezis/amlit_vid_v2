@@ -5,21 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('blueprints', '0002_rename_lines_dialogue_line_and_more'),
+        ("blueprints", "0002_rename_lines_dialogue_line_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blueprint',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=django.utils.timezone.now),
+            model_name="blueprint",
+            name="created_at",
+            field=models.DateTimeField(
+                auto_now_add=True, default=django.utils.timezone.now
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='blueprint',
-            name='updated_at',
+            model_name="blueprint",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

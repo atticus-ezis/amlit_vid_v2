@@ -13,15 +13,22 @@ def project_view(request):
             return redirect("add-story", project_pk=project.pk)
     else:
         form = ProjectForm()
-    existing_projects = Project.objects.all().order_by('created_at')
-    return render(request, "home.html", {"form": form, "existing_projects": existing_projects})
+    existing_projects = Project.objects.all().order_by("created_at")
+    return render(
+        request, "home.html", {"form": form, "existing_projects": existing_projects}
+    )
 
 
 def project_detail(request, project_pk):
     project = get_object_or_404(Project, pk=project_pk)
     blueprints = project.story.blueprints.all()
-    accepted_blueprint = blueprints.filter(review_status=Blueprint.ReviewStatus.ACCEPTED).first()
-    context = {"project": project, "blueprints": blueprints, "accepted_blueprint": accepted_blueprint}
+    accepted_blueprint = blueprints.filter(
+        review_status=Blueprint.ReviewStatus.ACCEPTED
+    ).first()
+    context = {
+        "project": project,
+        "blueprints": blueprints,
+        "accepted_blueprint": accepted_blueprint,
+    }
     print(f"DEBUG Blueprints {accepted_blueprint}")
     return render(request, "project_detail.html", context)
-

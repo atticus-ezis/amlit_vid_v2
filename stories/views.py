@@ -4,6 +4,7 @@ from projects.models import Project
 
 # Create your views here.
 
+
 def story_view(request, project_pk):
     project = get_object_or_404(Project, pk=project_pk)
     if request.method == "POST":
@@ -13,7 +14,7 @@ def story_view(request, project_pk):
             story.project = project
             story.save()
             return redirect("blueprint", story_pk=story.pk)
-        
+
     else:
         form = StoryForm()
     return render(request, "story.html", {"form": form, "project": project})

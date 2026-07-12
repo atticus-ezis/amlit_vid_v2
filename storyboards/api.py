@@ -13,7 +13,9 @@ model = "gpt-image-1"
 
 
 def openai_generation(
-    prompt: str, size: str = sizes[Image.DeviceType.DESKTOP][0], ai_model: str = model,
+    prompt: str,
+    size: str = sizes[Image.DeviceType.DESKTOP][0],
+    ai_model: str = model,
     reference_images: Optional[list[Path]] = None,
 ):
     client = OpenAI(api_key=OPENAI_KEY)
@@ -47,11 +49,9 @@ def openai_generation(
             ) from None
         raise
 
-
     return {
         "image_64": result.data[0].b64_json,
         "model": ai_model,
         "size": Image.SizeChoice(size),
         "prompt": prompt,
     }
-

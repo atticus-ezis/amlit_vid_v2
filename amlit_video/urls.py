@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -25,13 +26,15 @@ from blueprints.views import blueprint_view, blueprint_detail
 from storyboards.views import storyboard_view
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', project_view, name="home"),
-    path('project/<int:project_pk>/', project_detail, name="project-detail"),
-    path('project/<int:project_pk>/add-story', story_view, name="add-story"),
-    path('story/<int:story_pk>/blueprint/', blueprint_view, name="blueprint"),
-    path('blueprint/<int:blueprint_pk>/', blueprint_detail, name="blueprint-detail"),
-    path('blueprint/<int:blueprint_pk>/storybaord/', storyboard_view, name="storyboard"),
+    path("admin/", admin.site.urls),
+    path("", project_view, name="home"),
+    path("project/<int:project_pk>/", project_detail, name="project-detail"),
+    path("project/<int:project_pk>/add-story", story_view, name="add-story"),
+    path("story/<int:story_pk>/blueprint/", blueprint_view, name="blueprint"),
+    path("blueprint/<int:blueprint_pk>/", blueprint_detail, name="blueprint-detail"),
+    path(
+        "blueprint/<int:blueprint_pk>/storybaord/", storyboard_view, name="storyboard"
+    ),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

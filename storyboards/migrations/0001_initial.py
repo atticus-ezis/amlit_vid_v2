@@ -6,36 +6,125 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('blueprints', '0002_rename_lines_dialogue_line_and_more'),
+        ("blueprints", "0002_rename_lines_dialogue_line_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key', models.SlugField()),
-                ('image_file', models.ImageField(upload_to=storyboards.models.image_upload_path)),
-                ('ai_model', models.CharField(choices=[('gpt-image-1', 'Gpt Image 1')], max_length=100)),
-                ('prompt', models.TextField()),
-                ('size', models.CharField(choices=[('1536x1024', 'Landscape'), ('1024x1536', 'Portrait')], default='1536x1024', max_length=20)),
-                ('review_status', models.CharField(choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='pending', max_length=20)),
-                ('image_type', models.CharField(choices=[('character_design_sheet', 'Character Design'), ('background_design_sheet', 'Background Design'), ('storyboard', 'Storyboard')], max_length=23)),
-                ('generation_type', models.CharField(choices=[('initial', 'Initial'), ('re_prompt', 'Re-Prompt'), ('user_upload', 'User Upload')], default='initial', max_length=50)),
-                ('style', models.CharField(max_length=100)),
-                ('accuracy_score', models.IntegerField(blank=True, null=True)),
-                ('review_note', models.TextField(blank=True)),
-                ('upload_note', models.TextField(blank=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('background', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='images', to='blueprints.background')),
-                ('characters', models.ManyToManyField(blank=True, related_name='images', to='blueprints.character')),
-                ('previous_generation', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='next_generation', to='storyboards.image')),
-                ('reference_images', models.ManyToManyField(blank=True, to='storyboards.image')),
-                ('scene', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='images', to='blueprints.scene')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("key", models.SlugField()),
+                (
+                    "image_file",
+                    models.ImageField(upload_to=storyboards.models.image_upload_path),
+                ),
+                (
+                    "ai_model",
+                    models.CharField(
+                        choices=[("gpt-image-1", "Gpt Image 1")], max_length=100
+                    ),
+                ),
+                ("prompt", models.TextField()),
+                (
+                    "size",
+                    models.CharField(
+                        choices=[("1536x1024", "Landscape"), ("1024x1536", "Portrait")],
+                        default="1536x1024",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "review_status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("approved", "Approved"),
+                            ("rejected", "Rejected"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "image_type",
+                    models.CharField(
+                        choices=[
+                            ("character_design_sheet", "Character Design"),
+                            ("background_design_sheet", "Background Design"),
+                            ("storyboard", "Storyboard"),
+                        ],
+                        max_length=23,
+                    ),
+                ),
+                (
+                    "generation_type",
+                    models.CharField(
+                        choices=[
+                            ("initial", "Initial"),
+                            ("re_prompt", "Re-Prompt"),
+                            ("user_upload", "User Upload"),
+                        ],
+                        default="initial",
+                        max_length=50,
+                    ),
+                ),
+                ("style", models.CharField(max_length=100)),
+                ("accuracy_score", models.IntegerField(blank=True, null=True)),
+                ("review_note", models.TextField(blank=True)),
+                ("upload_note", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "background",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="blueprints.background",
+                    ),
+                ),
+                (
+                    "characters",
+                    models.ManyToManyField(
+                        blank=True, related_name="images", to="blueprints.character"
+                    ),
+                ),
+                (
+                    "previous_generation",
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="next_generation",
+                        to="storyboards.image",
+                    ),
+                ),
+                (
+                    "reference_images",
+                    models.ManyToManyField(blank=True, to="storyboards.image"),
+                ),
+                (
+                    "scene",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="blueprints.scene",
+                    ),
+                ),
             ],
         ),
     ]

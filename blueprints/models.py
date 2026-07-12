@@ -5,7 +5,6 @@ from stories.models import Story
 
 
 class Blueprint(models.Model):
-
     class ReviewStatus(models.TextChoices):
         ACCEPTED = ("accepted", "Accepted")
         REJECTED = ("rejected", "Rejected")
@@ -16,7 +15,9 @@ class Blueprint(models.Model):
         RE_PROMPT = ("re-prompt", "Re-prompt")
         MANUAL_EDIT = ("manual_edit", "Manual Edit")
 
-    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name="blueprints")
+    story = models.ForeignKey(
+        Story, on_delete=models.CASCADE, related_name="blueprints"
+    )
     content = models.JSONField(default=dict)
     generation_type = models.CharField(
         max_length=50,
@@ -37,7 +38,6 @@ class Blueprint(models.Model):
         # query all blueprints with matching story
         return f"Blueprint for {self.story.project.title}: {self.review_status} {self.updated_at:%Y-%m-%d %H:%M}"
 
-
     def as_yaml(self) -> str:
         return yaml.dump(
             self.content,
@@ -49,29 +49,35 @@ class Blueprint(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['story'],
-                condition=models.Q(review_status='accepted'),
-                name='unique_accepted_blueprint_per_story'
+                fields=["story"],
+                condition=models.Q(review_status="accepted"),
+                name="unique_accepted_blueprint_per_story",
             ),
             models.CheckConstraint(
-                condition=~models.Q(generation_type='re-prompt') | models.Q(re_prompt__isnull=False),
-                name='re_prompt_required_for_re_prompt_type'
+                condition=~models.Q(generation_type="re-prompt")
+                | models.Q(re_prompt__isnull=False),
+                name="re_prompt_required_for_re_prompt_type",
             ),
         ]
 
 
 class Character(models.Model):
-    blueprint = models.ForeignKey(Blueprint, on_delete=models.CASCADE, related_name="characters")
+    blueprint = models.ForeignKey(
+        Blueprint, on_delete=models.CASCADE, related_name="characters"
+    )
     key = models.SlugField(max_length=100)
     name = models.CharField(max_length=255)
     voice_id = models.TextField(null=True, blank=True)
+
     # character.images
     def __str__(self):
         return self.name
 
 
 class Background(models.Model):
-    blueprint = models.ForeignKey(Blueprint, on_delete=models.CASCADE, related_name="backgrounds")
+    blueprint = models.ForeignKey(
+        Blueprint, on_delete=models.CASCADE, related_name="backgrounds"
+    )
     key = models.SlugField(max_length=100)
     name = models.CharField(max_length=255)
     # background.images
@@ -81,11 +87,13 @@ class Background(models.Model):
 
 
 class Scene(models.Model):
-    blueprint = models.ForeignKey(Blueprint, on_delete=models.CASCADE, related_name="scenes")
+    blueprint = models.ForeignKey(
+        Blueprint, on_delete=models.CASCADE, related_name="scenes"
+    )
     sequence = models.IntegerField()
     key = models.SlugField()
     duration = models.IntegerField()
-    image_prompt = models.CharField(max_length=500) # prompt
+    image_prompt = models.CharField(max_length=500)  # prompt
     video_prompt = models.CharField(max_length=500)
     narration = models.TextField()
 
@@ -97,16 +105,16 @@ class Scene(models.Model):
 
     # pass to generate image
     def get_reference_images(self):
-        Image = apps.get_model('images', 'Image')
+        Image = apps.get_model("images", "Image")
         images = Image.objects.filter(
             key__in=self.reference_image_keys,
             review_status=Image.ReviewStatus.ACCEPTED,
         ).filter(
-            models.Q(character__blueprint=self.blueprint) |
-            models.Q(background__blueprint=self.blueprint) |
-            models.Q(scene__blueprint=self.blueprint)
+            models.Q(character__blueprint=self.blueprint)
+            | models.Q(background__blueprint=self.blueprint)
+            | models.Q(scene__blueprint=self.blueprint)
         )
-        found_keys = set(images.values_list('key', flat=True))
+        found_keys = set(images.values_list("key", flat=True))
         missing = set(self.reference_image_keys) - found_keys
         if missing:
             raise Image.DoesNotExist(f"Reference images not found: {missing}")
@@ -115,7 +123,9 @@ class Scene(models.Model):
 
 class Dialogue(models.Model):
     scene = models.ForeignKey(Scene, on_delete=models.CASCADE, related_name="dialogues")
-    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="dialogues")
+    character = models.ForeignKey(
+        Character, on_delete=models.CASCADE, related_name="dialogues"
+    )
     line = models.TextField()
 
     def __str__(self):

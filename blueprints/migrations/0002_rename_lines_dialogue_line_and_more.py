@@ -4,20 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('blueprints', '0001_initial'),
+        ("blueprints", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='dialogue',
-            old_name='lines',
-            new_name='line',
+            model_name="dialogue",
+            old_name="lines",
+            new_name="line",
         ),
         migrations.AlterField(
-            model_name='blueprint',
-            name='generation_type',
-            field=models.CharField(choices=[('initial', 'Initial'), ('re-prompt', 'Re-prompt'), ('manual_edit', 'Manual Edit')], default='initial', max_length=50),
+            model_name="blueprint",
+            name="generation_type",
+            field=models.CharField(
+                choices=[
+                    ("initial", "Initial"),
+                    ("re-prompt", "Re-prompt"),
+                    ("manual_edit", "Manual Edit"),
+                ],
+                default="initial",
+                max_length=50,
+            ),
         ),
     ]
