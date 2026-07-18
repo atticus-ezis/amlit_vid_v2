@@ -171,22 +171,24 @@ def accept_image(request, pk):
     ]
     for i in existing_accepted:
         i.review_status = Image.ReviewStatus.REJECTED
-        i.save()
+        i.save(update_fields=["review_status"])
 
     image.review_status = Image.ReviewStatus.APPROVED
-    image.save()
+    image.save(update_fields=["review_status"])
 
     return JsonResponse({
         "success": True,
-        "review_status": image.review_status,
+        "status": image.review_status,
+        "id": image.pk,
     })
 
 def reject_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
     image.review_status = Image.ReviewStatus.REJECTED
-    image.save()
+    image.save(update_fields=["review_status"])
 
     return JsonResponse({
         "success": True,
-        "review_status": image.review_status,
+        "status": image.review_status,
+        "id": image.pk,
     })

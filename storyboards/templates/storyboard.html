@@ -25,13 +25,20 @@
         <h1>Character Design</h1>
         <div name="image_grid_display">
             {% for image in existing_character_sheets %}
-                <h1>{{ image.key }}</h1>
-                <img src="{{ image.image_file.url }}">
-                <button class="accept-btn" data-url="{% url 'accept_image' pk=image.pk %}" type="button">
-                    Accept
-                </button>
-                <p>or</p>
-                <a href="{% url 'edit_image' %}">Edit</a>
+                <div class="image-card {% if image.review_status == 'APPROVED' %}approved{% elif image.review_status == 'REJECTED'%}rejected{% endif %}"
+                    id="image-{{image.pk}}">
+                    <h1>{{ image.key }}</h1>
+                    <img src="{{ image.image_file.url }}">
+                    <div name="user-review">
+                        <button class="accept-btn" data-url="{% url 'accept_image' pk=image.pk %}" type="button">
+                            Accept
+                        </button>
+                        <p>or</p>
+                        <button class="reject-btn" data-url="{% url 'reject_image' pk=image.pk%}" type="button">
+                            Reject
+                        </button>
+                    </div>
+                </div>
             {% endfor %}
         </div>
         <div name="progress">{{existing_character_sheets|length}} out of {{ needed_character_sheets }}</div>
@@ -40,9 +47,10 @@
 
     <script>
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        document.querySelectorAll(".accept-btn").forEach(button => {
-            button.addEventListener("click", async () => {
-                const response = await fetch(button.dataset.url, {
+
+        async function reviewImage(button) {
+            const response = await fetch(
+                button.dataset.url, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": csrftoken,
@@ -50,13 +58,33 @@
                     }
                 });
                 if (response.ok) {
-                    button.textContent = "Accepted";
-
+                    const data = await response.json()
+                    const card = document.querySelector(`#image-${data.id}`);
+                    card.classList.remove(
+                        "approved",
+                        "rejected"
+                    )
+                    card.classList.add(
+                        data.status
+                    )
+                    
                 } else {
                     alert("Failed to accept image")
                 }
-            });
-        });
+        };
+ 
+        document.querySelectorAll(".accept-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                reviewImage(button)
+            })
+        })
+
+        document.querySelectorAll(".reject-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                reviewImage(button)
+            })
+        })
+                
     </script>
 
     <div name="background_block">
