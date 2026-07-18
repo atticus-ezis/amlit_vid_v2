@@ -35,6 +35,7 @@ class Image(models.Model):
         GPT_IMAGE_1 = "gpt-image-1"
 
     # can use - blueprint
+    blueprint = models.ForeignKey("blueprints.blueprint", on_delete=models.CASCADE)
     characters = models.ManyToManyField(
         "blueprints.Character", blank=True, related_name="images"
     )
@@ -112,20 +113,6 @@ class Image(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
-
-    @property
-    def blueprint(self):
-        if self.scene:
-            return self.scene.blueprint
-
-        if self.background:
-            return self.background.blueprint
-
-        first_character = self.characters.first()
-        if first_character:
-            return first_character.blueprint
-
-        raise ValueError("Image has no associated blueprint")
 
     @property
     def generation_chain(self):

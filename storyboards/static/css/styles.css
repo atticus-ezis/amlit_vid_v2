@@ -1,0 +1,14 @@
+.image-card {
+    border: 3px solid transparent;
+    padding: 10px;
+}
+
+.image-card.approved {
+    border-color: green;
+    opacity: .5;
+}
+
+.image-card.rejected {
+    border-color: red;
+    opacity: .5;
+}

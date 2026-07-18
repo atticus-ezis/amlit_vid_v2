@@ -73,9 +73,9 @@ def storyboard_view(request, blueprint_pk):
     display_images = Image.objects.filter(
             blueprint=blueprint
         ).exclude(
-            Q(review_status=Image.ReviewStatus.REJECTED) &
-            ~Q(generation_type=Image.GenerationType.INITIAL)
-        )
+                Q(review_status=Image.ReviewStatus.REJECTED) &
+                ~Q(generation_type=Image.GenerationType.INITIAL)
+        ).distinct()
 
     existing_character_sheets = display_images.filter(image_type=Image.ImageType.CHARACTER_DESIGN)
     
@@ -128,6 +128,7 @@ def generate_character_design_sheet_images(
                 filename = f"character_design_sheet_{image_count}.png"
 
                 img = Image.objects.create(
+                    blueprint=first_char.blueprint,
                     key=f"{project_slug}_character_design_sheet_{image_count}",
                     ai_model=response["model"],
                     prompt=prompt,
