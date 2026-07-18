@@ -19,11 +19,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from projects.views import project_view, project_detail
 from stories.views import story_view
 from blueprints.views import blueprint_view, blueprint_detail
 from storyboards.views import storyboard_view
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -35,6 +36,8 @@ urlpatterns = [
     path(
         "blueprint/<int:blueprint_pk>/storybaord/", storyboard_view, name="storyboard"
     ),
+    path("storyboard", include("storyboards.urls") )
+    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

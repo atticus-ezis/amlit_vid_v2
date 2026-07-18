@@ -27,12 +27,35 @@
             {% for image in existing_character_sheets %}
                 <h1>{{ image.key }}</h1>
                 <img src="{{ image.image_file.url }}">
+                <button class="accept-btn" data-url="{% url 'accept_image' pk=image.pk %}" type="button">
+                    Accept
+                </button>
             {% endfor %}
         </div>
         <div name="progress">{{existing_character_sheets|length}} out of {{ needed_character_sheets }}</div>
         <button name="action" value="generate_character_sheets" type="submit">Generate Characters</button>
-        # add a reject or accept pathway here
     </div>
+
+    <script>
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        document.querySelectorAll(".accept-btn").forEach(button => {
+            button.addEventListener("click", async () => {
+                const response = await fetch(button.dataset.url, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    }
+                });
+                if (response.ok) {
+                    button.textContent = "Accepted";
+
+                } else {
+                    alert("Failed to accept image")
+                }
+            });
+        });
+    </script>
 
     <div name="background_block">
         <h1>Backgrounds</h1>

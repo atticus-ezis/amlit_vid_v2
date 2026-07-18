@@ -8,34 +8,38 @@ from storyboards.api import openai_generation
 from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
 styles = {"pixar": "in a pixar semi realistic style"}
-batch_number = 5
+
 
 
 # Create your views here.
 # todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
+
+
     characters = blueprint.characters.all()
     needed_character_sheets = (len(characters) + 4) // 5
 
     if request.method == "POST":
-        print("post request started")
         # add these to settings later
         selected_style = request.POST.get("image_style")
+        selected_size = request.POST.get("image_size")
         style = styles[selected_style]
         size = (
             Image.SizeChoice.LANDSCAPE
-            if request.POST.get("image_size") == "landscape"
+            if selected_size == "landscape"
             else Image.SizeChoice.PORTRAIT
         )
         action = request.POST.get("action")
 
         if action == "generate_character_sheets":
             print("DEBUG: generating character sheet...")
+
             completed_sheets = (
                 Image.objects.filter(
                     characters__blueprint=blueprint,
@@ -44,10 +48,10 @@ def storyboard_view(request, blueprint_pk):
                     style=style,
                 )
                 .distinct()
-                .count()
             )
+            completed_count = completed_sheets.count()
 
-            if needed_character_sheets != completed_sheets:
+            if needed_character_sheets != completed_count:
                 print("Images NEEDED! Generating images")
                 existing_character_ids = completed_sheets.values_list(
                     "characters__id", flat=True
@@ -94,6 +98,7 @@ def storyboard_view(request, blueprint_pk):
 def generate_character_design_sheet_images(
     characters: list[QuerySet], size: str, style: str
 ) -> list[Image]:
+    batch_number = 5
     character_count = characters.count()
     image_count = 1
     first_char = characters.first()
@@ -149,3 +154,14 @@ def get_character_design_sheet_prompt(characters: QuerySet, style: str):
     character_list = (", ").join([character.name for character in characters])
     prompt = f"Character design sheet for {story_title}, {character_list}, {style}"
     return prompt
+
+
+def accept_image(request, pk):
+    image = get_object_or_404(Image, pk=pk)
+    image.review_status = Image.ReviewStatus.APPROVED
+    image.save()
+
+    return JsonResponse({
+        "success": True,
+        "review_status": image.review_status,
+    })
