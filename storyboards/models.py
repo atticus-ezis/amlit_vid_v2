@@ -127,19 +127,19 @@ class Image(models.Model):
 
         raise ValueError("Image has no associated blueprint")
 
-    # fix this logic
-    # @property
-    # def get_key(self):
-    #     last_generation = self.previous_generation
-    #     if last_generation:
-    #         old_key = last_generation.key
-    #         if last_generation.is_root_generation():
-    #             return old_key+"_V1"
+    @property
+    def generation_chain(self):
+        root = self.get_root_generation()
+        chain = []
+        current = root
+        while current is not None:
+            chain.append(current)
+            if hasattr(current, "next_generation"):
+                current = current.next_generation
+            else:
+                current = None
+        return chain
 
-    #         sequence = int(old_key[-1]) + 1
-    #         return old_key[:-1] + sequence
-    #     else:
-    #         return self.key
 
     def serialize_reference(self):
         return {
@@ -170,12 +170,13 @@ class Image(models.Model):
         if self.review_note:
             data["review_note"] = self.review_note
 
+    @property
     def is_root_generation(self):
         return self.previous_generation is None
 
     def get_root_generation(self):
         current = self
-        while not current.is_root_generation():
+        while not current.is_root_generation:
             current = current.previous_generation
         return current
 

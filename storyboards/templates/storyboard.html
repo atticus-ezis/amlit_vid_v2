@@ -30,6 +30,8 @@
                 <button class="accept-btn" data-url="{% url 'accept_image' pk=image.pk %}" type="button">
                     Accept
                 </button>
+                <p>or</p>
+                <a href="{% url 'edit_image' %}">Edit</a>
             {% endfor %}
         </div>
         <div name="progress">{{existing_character_sheets|length}} out of {{ needed_character_sheets }}</div>

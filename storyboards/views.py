@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import JsonResponse
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ styles = {"pixar": "in a pixar semi realistic style"}
 # todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
-
 
     characters = blueprint.characters.all()
     needed_character_sheets = (len(characters) + 4) // 5
@@ -70,11 +70,15 @@ def storyboard_view(request, blueprint_pk):
                 print("DEBUG: sheet(s) already exist!")
                 print(f"Existing... \n{completed_sheets}")
 
-    existing_character_sheets = (
-        Image.objects.filter(characters__in=blueprint.characters.all())
-        .exclude(generation_type=Image.ReviewStatus.REJECTED)
-        .distinct()
-    )
+    display_images = Image.objects.filter(
+            blueprint=blueprint
+        ).exclude(
+            Q(review_status=Image.ReviewStatus.REJECTED) &
+            ~Q(generation_type=Image.GenerationType.INITIAL)
+        )
+
+    existing_character_sheets = display_images.filter(image_type=Image.ImageType.CHARACTER_DESIGN)
+    
 
 
     # existing_background_sheets=Image.objects.filter(
@@ -158,7 +162,28 @@ def get_character_design_sheet_prompt(characters: QuerySet, style: str):
 
 def accept_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
+    # only one image in a chain can be approved
+    # find existing images in the chain which are approved
+    existing_accepted = [
+        i for i in image.generation_chain 
+        if i.review_status == Image.ReviewStatus.APPROVED 
+        and i.pk != image.pk
+    ]
+    for i in existing_accepted:
+        i.review_status = Image.ReviewStatus.REJECTED
+        i.save()
+
     image.review_status = Image.ReviewStatus.APPROVED
+    image.save()
+
+    return JsonResponse({
+        "success": True,
+        "review_status": image.review_status,
+    })
+
+def reject_image(request, pk):
+    image = get_object_or_404(Image, pk=pk)
+    image.review_status = Image.ReviewStatus.REJECTED
     image.save()
 
     return JsonResponse({
