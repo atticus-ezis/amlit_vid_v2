@@ -5,10 +5,10 @@
 
 .image-card.approved {
     border-color: green;
-    opacity: .5;
+
 }
 
 .image-card.rejected {
     border-color: red;
-    opacity: .5;
+
 }
