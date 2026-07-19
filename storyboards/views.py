@@ -193,12 +193,25 @@ def accept_image(request, pk):
 
     image.review_status = Image.ReviewStatus.APPROVED
     image.save(update_fields=["review_status"])
+    
+    has_approved = any(
+        i.review_status == Image.ReviewStatus.APPROVED
+        for i in image.generation_chain
+    )
+
+    images = [
+        {"id": i.id, "status": i.review_status} for i in image.generation_chain
+    ]
+    print(f"images --- {images}")
 
     return JsonResponse({
         "success": True,
         "status": image.review_status,
         "id": image.pk,
-        "rejected_ids": [i.id for i in existing_accepted]
+        "rejected_ids": [i.id for i in existing_accepted],
+        "images": images,
+        "has_approved": has_approved,
+        "image_type": image.image_type,
     })
 
 def reject_image(request, pk):
@@ -206,8 +219,20 @@ def reject_image(request, pk):
     image.review_status = Image.ReviewStatus.REJECTED
     image.save(update_fields=["review_status"])
 
+    has_approved = any(
+        i.review_status == Image.ReviewStatus.APPROVED
+        for i in image.generation_chain
+    )
+
+    images = [
+        {"id": i.id, "status": i.review_status} for i in image.generation_chain
+    ]
+
     return JsonResponse({
         "success": True,
         "status": image.review_status,
         "id": image.pk,
+        "has_approved": has_approved,
+        "images": images,
+        "image_type": image.image_type,
     })

@@ -61,6 +61,10 @@
                     </div>
                 </div>
             {% endfor %}
+            <div class="edit-card"
+                data-image-type="character_design_sheet">
+                <p>EDIT</p>
+            </div>
         </div>
         <div name="progress">{{existing_character_sheets|length}} out of {{ needed_character_sheets }}</div>
         <button name="action" value="generate_character_sheets" type="submit">Generate Characters</button>
@@ -80,21 +84,21 @@
                 });
                 if (response.ok) {
                     const data = await response.json()
-                    const card = document.querySelector(`#image-${data.id}`);
-                    card.classList.remove(
-                        "approved",
-                        "rejected"
-                    )
-                    card.classList.add(
-                        data.status
-                    )
 
-                    (data.rejected_ids || []).forEach(id => {
-                        const rejectedCard = document.querySelector(`#image-${id}`);
-
-                        rejectedCard.classList.remove("approved");
-                        rejectedCard.classList.add("rejected");
+                    data.images.forEach(image => {
+                        const card = document.querySelector(`#image-${image.id}`);
+                        card.classList.remove("approved", "rejected");
+                        card.classList.add(image.status);
                     });
+
+                    const editCard = document.querySelector(
+                        `.edit-card[data-image-type="${data.image_type}"]`
+                    );
+
+                    if (editCard) {
+                        editCard.hidden = data.has_approved
+                    }
+
                     
                 } else {
                     alert("Failed to accept image")
