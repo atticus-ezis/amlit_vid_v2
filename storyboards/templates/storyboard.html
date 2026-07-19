@@ -13,14 +13,26 @@
         <label>
             Size
             <select name="image_size" onchange="this.form.submit()">
-                <option value="landscape">Landscape</option>
-                <option value="portrait">Portrait</option>
+                <option value="landscape"
+                    {% if request.POST.image_size == "landscape" or not request.POST.image_size %}
+                        selected
+                    {% endif %}
+                >Landscape</option>
+                <option value="portrait"
+                    {% if request.POST.image_size == "portrait" %}
+                        selected
+                    {% endif %}
+                >Portrait</option>
             </select>
         </label>
         <label>
             Style
             <select name="image_style" onchange="this.form.submit()">
-                <option value="pixar">Pixar</option>
+                <option value="pixar"
+                    {% if request.POST.image_style == "pixar"%}
+                        selected
+                    {% endif %}
+                >Pixar</option>
             </select>
         </label>
     </fieldset>
