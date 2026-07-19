@@ -76,10 +76,18 @@
                     card.classList.add(
                         data.status
                     )
+
+                    (data.rejected_ids || []).forEach(id => {
+                        const rejectedCard = document.querySelector(`#image-${id}`);
+
+                        rejectedCard.classList.remove("approved");
+                        rejectedCard.classList.add("rejected");
+                    });
                     
                 } else {
                     alert("Failed to accept image")
                 }
+
         };
  
         document.querySelectorAll(".accept-btn").forEach(button => {

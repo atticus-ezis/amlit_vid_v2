@@ -37,17 +37,22 @@ def get_display_images(
 # todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
-    image_size = image_sizes[request.POST.get("image_size")].lower()
-    image_style = str(request.POST.get("image_style")).lower()
+    image_size = image_sizes[request.POST.get("image_size") or "landscape"]
+    image_style = (request.POST.get("image_style") or "pixar").lower()
 
     characters = blueprint.characters.all()
     needed_character_sheets = (len(characters) + 4) // 5
+
+    print("blueprint:", blueprint)
+    print("size:", image_size)
+    print("style:", image_style)
 
     display_images = get_display_images(
         blueprint=blueprint,
         size=image_size,
         style=image_style,
     )
+    print(f"DEBUG: {display_images}")
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -193,6 +198,7 @@ def accept_image(request, pk):
         "success": True,
         "status": image.review_status,
         "id": image.pk,
+        "rejected_ids": [i.id for i in existing_accepted]
     })
 
 def reject_image(request, pk):
