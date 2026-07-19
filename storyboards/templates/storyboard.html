@@ -5,25 +5,30 @@
 {% endblock %}
 
 {% block content %}
+<!-- request size / refresh page -->
+
 <form method="post">
     {% csrf_token %}
-
-    <!-- default controls -->
     <fieldset>
         <label>
             Size
-            <select name="image_size">
+            <select name="image_size" onchange="this.form.submit()">
                 <option value="landscape">Landscape</option>
                 <option value="portrait">Portrait</option>
             </select>
         </label>
         <label>
             Style
-            <select name="image_style">
+            <select name="image_style" onchange="this.form.submit()">
                 <option value="pixar">Pixar</option>
             </select>
         </label>
     </fieldset>
+
+</form>
+
+<form method="post">
+    {% csrf_token %}
 
     <div name="character_design_block">
         <h1>Character Design</h1>

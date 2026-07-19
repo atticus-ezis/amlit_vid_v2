@@ -4,17 +4,13 @@ from openai import OpenAI, BadRequestError
 from pathlib import Path
 from .models import Image
 
-sizes = {
-    Image.DeviceType.DESKTOP: ["1536x1024"],
-    Image.DeviceType.PHONE: ["1024x1536"],
-}
 
 model = "gpt-image-1"
 
 
 def openai_generation(
     prompt: str,
-    size: str = sizes[Image.DeviceType.DESKTOP][0],
+    size: str,
     ai_model: str = model,
     reference_images: Optional[list[Path]] = None,
 ):

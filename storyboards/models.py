@@ -8,10 +8,6 @@ def image_upload_path(instance, filename):
 
 
 class Image(models.Model):
-    class DeviceType(models.TextChoices):
-        PHONE = "phone", "Phone"
-        DESKTOP = "desktop", "Desktop"
-
     class SizeChoice(models.TextChoices):
         LANDSCAPE = ("1536x1024",)
         PORTRAIT = ("1024x1536",)
