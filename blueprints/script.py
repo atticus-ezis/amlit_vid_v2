@@ -2,7 +2,8 @@ import anthropic
 from .schema import BlueprintSchema
 from amlit_video.settings import OPENAI_KEY, ANTHROPIC_KEY
 from stories.models import Story
-from blueprints.models import Blueprint, Character, Background, Scene, Dialogue
+from blueprints.models import Blueprint, Character, Background, Scene, Dialogue, ImageStack
+from django.db import transaction
 
 max_tokens = 4096
 
@@ -174,3 +175,43 @@ def save_blueprint(yaml_content: dict, story: Story):
                 line=line,
             )
     return blueprint
+
+@transaction.atomic
+def create_image_stacks(blueprint: Blueprint, character_batch_number=5):
+    
+    # characters
+    characters = blueprint.characters.all()
+    batch_count = 1
+    for i in range(0, characters.count(), character_batch_number):
+        character_batch = characters[i:i+character_batch_number]
+        character_stack, _ = ImageStack.objects.get_or_create(
+            blueprint=blueprint,
+            category=ImageStack.StackCategory.CHARACTERS,
+            name=f"{blueprint.story.project.title} Character Design Sheet {batch_count}"
+        )
+        character_stack.characters.set(character_batch)
+        batch_count += 1
+    
+    # backgrounds
+    backgrounds = blueprint.backgrounds.all()
+    for background in backgrounds:
+        ImageStack.objects.get_or_create(
+            blueprint=blueprint,
+            category=ImageStack.StackCategory.BACKGROUNDS,
+            name=background.name,
+            background=background,
+        )
+
+    # scenes
+    scenes = blueprint.scenes.all()
+    for scene in scenes:
+        ImageStack.objects.get_or_create(
+            blueprint=blueprint,
+            category=ImageStack.StackCategory.SCENES,
+            name=f"Scene {str(scene.sequence)}",
+            scene=scene,
+        )
+    
+
+
+

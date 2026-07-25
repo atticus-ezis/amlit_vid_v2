@@ -3,7 +3,7 @@ from django.contrib import messages
 from stories.models import Story
 from django.shortcuts import get_object_or_404, render, redirect
 from pathlib import Path
-from blueprints.script import get_blueprint, save_blueprint, re_prompt_blueprint
+from blueprints.script import get_blueprint, save_blueprint, re_prompt_blueprint, create_image_stacks
 from .models import Blueprint
 from .forms import BlueprintRepromptForm, BlueprintDetailForm
 from django.db import transaction
@@ -80,6 +80,7 @@ def blueprint_detail(request, blueprint_pk):
                 blueprint = save_blueprint(
                     yaml_content=blueprint.content, story=blueprint.story
                 )
+                create_image_stacks(blueprint=blueprint)
                 return redirect("storyboard", blueprint_pk=blueprint.pk)
 
         elif "re_prompt" in request.POST:

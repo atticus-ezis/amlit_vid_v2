@@ -130,3 +130,44 @@ class Dialogue(models.Model):
 
     def __str__(self):
         return f"{self.character}: {self.line[:50]}"
+
+
+class ImageStack(models.Model):
+    class StackCategory(models.TextChoices):
+        CHARACTERS = "characters"
+        BACKGROUNDS = "backgrounds"
+        SCENES = "scenes"
+
+    category = models.CharField(
+        choices=StackCategory.choices,
+        max_length=23
+    )
+
+    blueprint=models.ForeignKey(
+        Blueprint,
+        on_delete=models.CASCADE,
+        related_name="image_stacks"
+    )
+
+    characters=models.ManyToManyField(
+        Character,
+        related_name="image_stack",
+        blank=True, 
+    )
+    background = models.OneToOneField(
+        Background,
+        null=True,
+        blank=True,
+        related_name="image_stack",
+        on_delete=models.CASCADE,
+    )
+    scene = models.OneToOneField(
+        Scene,
+        null=True,
+        blank=True,
+        related_name="image_stack",
+        on_delete=models.CASCADE,
+    )
+    name=models.CharField(
+        max_length=50,
+    )

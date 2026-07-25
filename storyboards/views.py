@@ -1,15 +1,14 @@
 import base64
 import logging
 from .models import Image
-from blueprints.models import Blueprint
-from django.db.models import QuerySet
+from blueprints.models import Blueprint, ImageStack
 from django.shortcuts import get_object_or_404, render
 from storyboards.api import openai_generation
 from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Case, When, Value, IntegerField
 
 logger = logging.getLogger(__name__)
 
@@ -19,162 +18,105 @@ image_sizes = {
     "portrait": Image.SizeChoice.PORTRAIT,
 }
 
-def get_display_images(
-        blueprint: Blueprint,
-        size: str,
-        style: str,
-):
-    return Image.objects.filter(
-            blueprint=blueprint,
-            size=size,
-            style=style,
-        ).exclude(
-            Q(review_status=Image.ReviewStatus.REJECTED) &
-            ~Q(generation_type=Image.GenerationType.INITIAL)
-        ).distinct()
 
-# Create your views here.
-# todo add a style input option
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
+    blueprint_stacks = ImageStack.objects.filter(blueprint=blueprint)
+    
     image_size = image_sizes[request.POST.get("image_size") or "landscape"]
     image_style = (request.POST.get("image_style") or "pixar").lower()
 
-    characters = blueprint.characters.all()
-    needed_character_sheets = (len(characters) + 4) // 5
-
-    print("blueprint:", blueprint)
-    print("size:", image_size)
-    print("style:", image_style)
-
-    display_images = get_display_images(
-        blueprint=blueprint,
+    available_images = Image.objects.filter(
+        image_stack__in=blueprint_stacks,
         size=image_size,
-        style=image_style,
+        style=image_style
     )
-    print(f"DEBUG: {display_images}")
 
     if request.method == "POST":
         action = request.POST.get("action")
 
         if action == "generate_character_sheets":
-            character_sheets = display_images.filter(
-                image_type=Image.ImageType.CHARACTER_DESIGN,
-                generation_type=Image.GenerationType.INITIAL
+            character_stacks = blueprint_stacks.filter(
+                category = ImageStack.StackCategory.CHARACTERS
             )
-            character_sheet_count = character_sheets.count()
-
-            if needed_character_sheets != character_sheet_count:
-                print(f"DEBUG: {needed_character_sheets - character_sheet_count} Images NEEDED! Generating images")
-                existing_character_ids = character_sheets.values_list(
-                    "characters__id", flat=True
-                )
-                ungenerated_characters = characters.exclude(
-                    id__in=existing_character_ids
-                )
-                try:
-                    generate_character_design_sheet_images(
-                        blueprint=blueprint,
-                        characters=ungenerated_characters, 
-                        size=image_size, 
-                        style=image_style
-                    )
-
-                except RuntimeError as e:
-                    messages.error(request, str(e))
-                except Exception:
-                    messages.error(request, "An unexpected error occurred while generating images.")
-
-
-    latest_display_images = get_display_images(
-        blueprint=blueprint,
-        size=image_size,
-        style=image_style,
-    )
-
-    existing_character_sheets = latest_display_images.filter(image_type=Image.ImageType.CHARACTER_DESIGN)
+            for stack in character_stacks:
+                if stack.images.exists():
+                    continue
+                else:
+                    try:
+                        generate_character_design_sheet_images(
+                            stack=stack,
+                            size=image_size, 
+                            style=image_style
+                        )
+                    except RuntimeError as e:
+                        messages.error(request, str(e))
+                    except Exception:
+                        messages.error(request, "An unexpected error occurred while generating images.")
     
-
-
-    # existing_background_sheets=Image.objects.filter(
-    #     background__in=blueprint.backgrounds.all()
-    #     ).exclude(generation_type=Image.GenerationType.REJECTED)
-
-    # existing_scenes=Image.objects.filter(
-    #     scene__in=blueprint.scenes.all()
-    # ).exclude(generation_type=Image.GenerationType.REJECTED)
+    character_stacks = blueprint_stacks.filter(category=ImageStack.StackCategory.CHARACTERS)
+    character_image_stacks = available_images.filter(image_stack__in=character_stacks).annotate(
+        is_approved=Case(
+            When(review_status=Image.ReviewStatus.APPROVED, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+        ).order_by(
+            "is_approved", 
+            "created_at"
+        )
 
     context = {
-        "existing_character_sheets": existing_character_sheets,
-        "needed_character_sheets": needed_character_sheets
-        # needed_character_sheets (int)
-        # "existing_background_sheets": existing_background_sheets,
-        # "existing_scenes": existing_scenes
+        "character_image_stacks": character_image_stacks
     }
     return render(request, "storyboard.html", context)
 
 
 def generate_character_design_sheet_images(
-    blueprint: Blueprint, 
-    characters: list[QuerySet], 
+    stack: ImageStack, 
     size: str, 
     style: str
 ) -> list[Image]:
-    batch_number = 5
-    character_count = characters.count()
-    image_count = 1
-
-    for i in range(0, character_count, batch_number):
-        try:
-            with transaction.atomic():
-                character_batch = list(characters[i : i + batch_number])
-                prompt = get_character_design_sheet_prompt(
-                    blueprint=blueprint,
-                    characters=character_batch, 
-                    style=style
-                )
-
-                response = openai_generation(prompt=prompt, size=size)
-                print(f"OPEN AI Response{response}")
-
-                image_bytes = base64.b64decode(response["image_64"])
-                filename = f"character_design_sheet_{image_count}.png"
-                key = f"{blueprint.story.project.slug}_character_design_sheet_{image_count}"
-
-                img = Image.objects.create(
-                    blueprint=blueprint,
-                    key=key,
-                    ai_model=response["model"],
-                    prompt=prompt,
-                    size=response["size"],
-                    style=style,
-                    image_type=Image.ImageType.CHARACTER_DESIGN,
-                )
-                img.characters.set(character_batch)
-                img.image_file.save(
-                    filename,
-                    ContentFile(image_bytes),
-                    save=True,
-                )
-                image_count += 1
-                print(f"DEBUG: saved image {img.key}: url -> {img.image_file.url}")
-        except Exception:
-            logger.exception(
-                "Failed generating character design sheets for project %s", blueprint.story.project.slug
+    try:
+        with transaction.atomic():
+            prompt = get_character_design_sheet_prompt(
+                stack=stack,
+                style=style
             )
-            raise
+
+            response = openai_generation(prompt=prompt, size=size)
+            print(f"DEBUG: AI Response{response}")
+
+            image_bytes = base64.b64decode(response["image_64"])
+            filename = f"{stack.name}.png"
+            img = Image.objects.create(
+                image_stack=stack,
+                ai_model=response["model"],
+                prompt=prompt,
+                size=response["size"],
+                style=style,
+            )
+            img.image_file.save(
+                filename,
+                ContentFile(image_bytes),
+                save=True,
+            )
+    except Exception:
+        logger.exception(
+            f"Failed generating character design sheets for {stack.name} with characters: {[character.name for character in stack.characters]}"
+        )
+        raise
     
 
 
 def get_character_design_sheet_prompt(
-        blueprint: Blueprint, 
-        characters: QuerySet, 
+        stack: ImageStack, 
         style: str
     ):
     style_description = image_styles[style]
-    story_title = blueprint.blueprint.story.project.title
-    character_list = (", ").join([character.name for character in characters])
-    prompt = f"Character design sheet for {story_title}, {character_list}, {style_description}"
+    title = stack.blueprint.story.project.title
+    character_list = (", ").join([character.name for character in stack.characters])
+    prompt = f"Character design sheet for {title}, {character_list}, {style_description}"
     return prompt
 
 
@@ -211,7 +153,7 @@ def accept_image(request, pk):
         "rejected_ids": [i.id for i in existing_accepted],
         "images": images,
         "has_approved": has_approved,
-        "image_type": image.image_type,
+        "image_stack": image.image_stack,
     })
 
 def reject_image(request, pk):
@@ -234,5 +176,5 @@ def reject_image(request, pk):
         "id": image.pk,
         "has_approved": has_approved,
         "images": images,
-        "image_type": image.image_type,
+        "image_stack": image.image_stack,
     })
