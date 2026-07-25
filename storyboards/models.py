@@ -46,7 +46,7 @@ class Image(models.Model):
     image_stack = models.ForeignKey(
         ImageStack,
         on_delete=models.CASCADE,
-        related_name="images"
+        related_name="images",
     )
     style = models.CharField(max_length=100)
     image_file = models.ImageField(upload_to=image_upload_path)
@@ -59,6 +59,7 @@ class Image(models.Model):
     reference_images = models.ManyToManyField(
         "self",
         blank=True,
+        symmetrical=False,
         related_name="referenced_by",
     )
     parent_image = models.ForeignKey(

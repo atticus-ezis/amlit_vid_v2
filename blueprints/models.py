@@ -36,7 +36,7 @@ class Blueprint(models.Model):
 
     def __str__(self):
         # query all blueprints with matching story
-        return f"Blueprint for {self.story.project.title}: {self.review_status} {self.updated_at:%Y-%m-%d %H:%M}"
+        return self.story.project.title
 
     def as_yaml(self) -> str:
         return yaml.dump(
@@ -171,3 +171,6 @@ class ImageStack(models.Model):
     name=models.CharField(
         max_length=50,
     )
+
+    def __str__(self):
+        return self.name
