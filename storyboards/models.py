@@ -89,6 +89,9 @@ class Image(models.Model):
             chain.append(current.parent_image)
             current = current.parent_image
         return chain[::-1]
+    
+    def __str__(self):
+        return self.image_stack.name
 
     
     

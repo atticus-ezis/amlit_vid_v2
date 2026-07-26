@@ -52,6 +52,7 @@ def storyboard_view(request, blueprint_pk):
     missing_character_sheets = character_stacks.annotate(
         image_count=Count("images")
     ).filter(image_count=0).exists()
+    print(f"DEBUG! character_sheets: {character_sheets}")
 
 
     context = {
@@ -65,17 +66,19 @@ def accept_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
     image_stack = Image.objects.filter(image_stack=image.image_stack)
     existing_approved = image_stack.filter(review_status=Image.ReviewStatus.APPROVED).exclude(pk=image.pk).first()
-    updated_id = None or existing_approved.id
-    if existing_approved.exists():
-        existing_approved.update(review_status=Image.ReviewStatus.PENDING)
-    image.update(review_status=Image.ReviewStatus.APPROVED)
+    updated_id = existing_approved.pk if existing_approved else None
+    if existing_approved:
+        existing_approved.review_status=Image.ReviewStatus.PENDING
+        existing_approved.save()
+    image.review_status=Image.ReviewStatus.APPROVED
+    image.save()
 
     return JsonResponse({
         "success": True,
         "status": image.review_status,
         "id": image.pk,
         "change_card_id": updated_id,
-        "image_stack": image.image_stack,
+        "image_stack_id": image.image_stack.id,
     })
 
 def reject_image(request, pk):
@@ -83,20 +86,9 @@ def reject_image(request, pk):
     image.review_status = Image.ReviewStatus.REJECTED
     image.save(update_fields=["review_status"])
 
-    has_approved = any(
-        i.review_status == Image.ReviewStatus.APPROVED
-        for i in image.generation_chain
-    )
-
-    images = [
-        {"id": i.id, "status": i.review_status} for i in image.generation_chain
-    ]
-
     return JsonResponse({
         "success": True,
         "status": image.review_status,
         "id": image.pk,
-        "has_approved": has_approved,
-        "images": images,
-        "image_stack": image.image_stack,
+        "image_stack_id": image.image_stack.id,
     })
