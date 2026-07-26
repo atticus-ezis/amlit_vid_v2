@@ -1,5 +1,6 @@
 
 import logging
+import json
 from .models import Image
 from blueprints.models import Blueprint, ImageStack
 from django.shortcuts import get_object_or_404, render
@@ -71,6 +72,8 @@ def accept_image(request, pk):
         existing_approved.review_status=Image.ReviewStatus.PENDING
         existing_approved.save()
     image.review_status=Image.ReviewStatus.APPROVED
+    if image.review_note is not None:
+        image.review_note=None
     image.save()
 
     return JsonResponse({
@@ -85,6 +88,13 @@ def reject_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
     image.review_status = Image.ReviewStatus.REJECTED
     image.save(update_fields=["review_status"])
+
+    if request.body:
+        data = json.loads(request.body)
+        reason = data.get("reason")
+        if reason:
+            image.review_note = reason
+            image.save(update_fields=["review_note"])
 
     return JsonResponse({
         "success": True,
