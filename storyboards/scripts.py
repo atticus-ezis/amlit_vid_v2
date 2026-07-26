@@ -49,10 +49,9 @@ def get_character_design_sheet_prompt(
         stack: ImageStack, 
         style: str
     ):
-    style_description = image_styles[style]
     title = stack.blueprint.story.project.title
     character_list = (", ").join([character.name for character in stack.characters])
-    prompt = f"Character design sheet for {title}, {character_list}, {style_description}"
+    prompt = f"Character design sheet for {title}, {character_list}, {style}"
     return prompt
 
 def rank_queryset(queryset: QuerySet) -> QuerySet[Image]:

@@ -83,8 +83,24 @@
                                 <div id="regen-popup" class="regen-popup" hidden>
                                     <div class="regen-popup-content">
                                         <h2>Regenerate Image</h2>
-                                        <p>This is the popup content.</p>
+                                        <textarea id="reprompt-text-{{image.pk}}" class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5>
 
+                                        <button 
+                                            class="attach-reference-btn"
+                                            type="button">
+                                            Attach reference photos
+                                        </button>
+
+                                        <div class="reference-selector" hidden>
+                                            {% for ref_image in available_reference_images %}
+                                                <div class="reference-option" data-id="{{ref_image.pk}}">
+                                                    <img src="{{ref_image.image_file.url}}">
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+
+                                        {% comment %} <button class="submit-reprompt-btn" data-url="{% url 'reprompt_image' pk=image.pk %}" data-id="{{image.pk}}"></button> {% endcomment %}
                                         <button class="close-popup-btn" type="button">
                                             Close
                                         </button>
@@ -103,6 +119,40 @@
 
     <script>
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        document.querySelectorAll(".submit-reprompt-btn").forEach(button => {
+            button.addEventListener("click", async () => {
+                const value = document.querySelector(`#reprompt-text-${button.dataset.id}`).value
+                const url = button.dataset.url
+                const imageID = button.dataset.id
+     
+                response = await fetch(
+                    url, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: JSON.stringify({
+                        "reprompt": value,
+                    })
+                });
+                if (response.ok) {
+                    const data = await response.json()
+                    const oldCard = document.querySelector(`#image-${imageID}`)
+                    const textarea = oldCard.querySelector(".reprompt-textarea");
+                    const repromptButton = oldCard.querySelector(".submit-reprompt-btn");
+                    oldCard.id = `image-${data.id}`
+                    oldCard.querySelector("img").src = data.image_url
+                    oldCard.querySelector(".accept-btn").dataset.url = data.accept_url;
+                    oldCard.querySelector(".reject-btn").dataset.url = data.reject_url;
+                    textarea.id = `reprompt-text-${data.id}`;
+                    repromptButton.dataset.id = data.id;
+                    repromptButton.dataset.url = data.reprompt_url;
+                }
+            })
+        })
+            
 
         document.querySelectorAll(".image-reprompt").forEach(popup => {
             const card = popup.closest(".image-card")

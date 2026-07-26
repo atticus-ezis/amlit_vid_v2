@@ -16,13 +16,17 @@ image_sizes = {
     "portrait": Image.SizeChoice.PORTRAIT,
 }
 
+image_styles = {"pixar": "in a pixar semi realistic style"}
+
 
 def storyboard_view(request, blueprint_pk):
     blueprint = get_object_or_404(Blueprint, pk=blueprint_pk)
     blueprint_stacks = ImageStack.objects.filter(blueprint=blueprint)
     
     image_size = image_sizes[request.POST.get("image_size") or "landscape"]
-    image_style = (request.POST.get("image_style") or "pixar").lower()
+    image_style_value = (request.POST.get("image_style") or "pixar").lower()
+    image_style = image_styles[image_style_value]
+
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -46,15 +50,26 @@ def storyboard_view(request, blueprint_pk):
                     except Exception:
                         messages.error(request, "An unexpected error occurred while generating images.")
     
+    available_images = Image.objects.filter(image_stack__in=blueprint_stacks, size=image_size, style=image_style_value)
+
+    available_character_images = available_images.filter(image_stack__category=ImageStack.StackCategory.CHARACTERS)
+
+    character_stacks = blueprint_stacks.filter(
+        category=ImageStack.StackCategory.CHARACTERS, 
+    )
+
+    character_sheets = [{"id": stack.id, "name": stack.name, "images": rank_queryset(available_character_images.filter(image_stack=stack))} for stack in character_stacks]
+    print(f"DEBUG: char sheets {character_sheets}")
+    missing_character_sheets = False
+    
     character_stacks = blueprint_stacks.filter(category=ImageStack.StackCategory.CHARACTERS)
-    character_sheets = [{"id": stack.id, "name": stack.name, "images": rank_queryset(stack.images.all())} for stack in character_stacks]
-    missing_character_sheets = character_stacks.annotate(
-        image_count=Count("images")
-    ).filter(image_count=0).exists()
-    print(f"DEBUG! character_sheets: {character_sheets}")
+    for stack in character_stacks:
+        if not stack.images.exists():
+            missing_character_sheets = True
 
-
+    
     context = {
+        "available_images": available_images,
         "character_sheets": character_sheets,
         "missing_character_sheets": missing_character_sheets,
     }
