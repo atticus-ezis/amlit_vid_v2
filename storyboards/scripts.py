@@ -4,6 +4,7 @@ from storyboards.api import openai_generation
 from django.db import transaction
 import base64
 from django.core.files.base import ContentFile
+from django.db.models import QuerySet, Case, When, Value, IntegerField
 import logging
 logger = logging.getLogger(__name__)
 
@@ -53,3 +54,12 @@ def get_character_design_sheet_prompt(
     character_list = (", ").join([character.name for character in stack.characters])
     prompt = f"Character design sheet for {title}, {character_list}, {style_description}"
     return prompt
+
+def rank_queryset(queryset: QuerySet) -> QuerySet[Image]:
+    return queryset.annotate(
+        approved_order=Case(
+            When(review_status=Image.ReviewStatus.APPROVED, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+    ).order_by("approved_order", "created_at")

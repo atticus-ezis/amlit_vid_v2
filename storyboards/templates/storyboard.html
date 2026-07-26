@@ -90,16 +90,22 @@
                     const card = document.querySelector(`#image-${data.id}`);
                     card.classList.remove("approved", "rejected");
                     card.classList.add(data.status);
-
                     if (data.change_card_id) {
                         const update_card = document.querySelector(`#image-${data.change_card_id}`);
                         update_card.remove("approved", "rejected")
                     }
 
+                    // update stack order
+                    const stack = card.closest(".image-stack")
+                    if (data.status == "approved") {
+                        stack.prepend(card)
+
+                    } else {
+                        stack.append(card)
+                    }
                 } else {
                     alert("Failed to accept image")
                 }
-
         };
  
         document.querySelectorAll(".accept-btn").forEach(button => {

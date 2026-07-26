@@ -5,7 +5,7 @@ from blueprints.models import Blueprint, ImageStack
 from django.shortcuts import get_object_or_404, render
 from storyboards.api import openai_generation
 from django.contrib import messages
-from .scripts import generate_character_design_sheet_images 
+from .scripts import generate_character_design_sheet_images, rank_queryset
 from django.db import transaction
 from django.http import JsonResponse
 from django.db.models import Case, When, Value, IntegerField, Count
@@ -48,7 +48,7 @@ def storyboard_view(request, blueprint_pk):
                         messages.error(request, "An unexpected error occurred while generating images.")
     
     character_stacks = blueprint_stacks.filter(category=ImageStack.StackCategory.CHARACTERS)
-    character_sheets = [{"id": stack.id, "name": stack.name, "images": stack.images.all()} for stack in character_stacks]
+    character_sheets = [{"id": stack.id, "name": stack.name, "images": rank_queryset(stack.images.all())} for stack in character_stacks]
     missing_character_sheets = character_stacks.annotate(
         image_count=Count("images")
     ).filter(image_count=0).exists()
