@@ -74,6 +74,7 @@ class Image(models.Model):
         blank=True,
     )
     review_note = models.TextField(
+        null=True,
         blank=True,
     )
     upload_note = models.TextField(

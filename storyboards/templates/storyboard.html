@@ -75,6 +75,22 @@
                                 </div>
                                 
                             </div>
+                            <!-- image reprompt -->
+                            <div class="image-reprompt" hidden>
+                                <button id="open-regen-btn" type="button">
+                                    Generate New Image
+                                </button>
+                                <div id="regen-popup" class="regen-popup" hidden>
+                                    <div class="regen-popup-content">
+                                        <h2>Regenerate Image</h2>
+                                        <p>This is the popup content.</p>
+
+                                        <button class="close-popup-btn" type="button">
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     {% endfor%}
                 </div>
@@ -87,6 +103,31 @@
 
     <script>
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        document.querySelectorAll(".image-reprompt").forEach(popup => {
+            const card = popup.closest(".image-card")
+            if (card.classList.contains("approved")) {
+                popup.hidden = true
+            } else {
+                popup.hidden = !popup.hidden
+            }
+        })
+        
+        document.querySelectorAll(".close-popup-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                const popUp = button.closest(".regen-popup-content").parentElement
+                popUp.hidden = true
+            })
+
+        })
+
+        document.querySelectorAll("#open-regen-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                const regenParent = button.closest(".image-reprompt")
+                const regenPopUp = regenParent.querySelector(".regen-popup")
+                regenPopUp.hidden = !regenPopUp.hidden
+            })
+        })
 
         async function rejectDescription(button) {
             const imageId = button.dataset.image
@@ -116,8 +157,6 @@
                 });
                 if (response.ok) {
                     const data = await response.json()
-
-                
                     const card = document.querySelector(`#image-${data.id}`);
                     card.classList.remove("approved", "rejected");
                     card.classList.add(data.status);
@@ -125,14 +164,16 @@
                         const update_card = document.querySelector(`#image-${data.change_card_id}`);
                         update_card.classList.remove("approved", "rejected")
                     }
-
+                    const regenPopUp = card.querySelector(".image-reprompt")
                     // update stack order
                     const stack = card.closest(".image-stack")
                     if (data.status == "approved") {
                         stack.prepend(card)
+                        regenPopUp.hidden = true
 
                     } else {
                         stack.append(card)
+                        regenPopUp.hidden = !regenPopUp.hidden
                     }
                 } else {
                     alert("Failed to accept image")
@@ -163,6 +204,10 @@
             });
 
         });
+
+
+
+
                 
     </script>
 

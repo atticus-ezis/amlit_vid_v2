@@ -1,1 +1,1 @@
-1. Create ImageStacks for existing blueprint in shell. Set the stack to existing image.
+1. Add the review note after the re gen process 

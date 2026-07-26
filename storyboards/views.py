@@ -4,12 +4,10 @@ import json
 from .models import Image
 from blueprints.models import Blueprint, ImageStack
 from django.shortcuts import get_object_or_404, render
-from storyboards.api import openai_generation
 from django.contrib import messages
 from .scripts import generate_character_design_sheet_images, rank_queryset
-from django.db import transaction
 from django.http import JsonResponse
-from django.db.models import Case, When, Value, IntegerField, Count
+from django.db.models import Count
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +71,7 @@ def accept_image(request, pk):
         existing_approved.save()
     image.review_status=Image.ReviewStatus.APPROVED
     if image.review_note is not None:
-        image.review_note=None
+        image.review_note=""
     image.save()
 
     return JsonResponse({
