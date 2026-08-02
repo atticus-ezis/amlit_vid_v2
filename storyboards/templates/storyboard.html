@@ -83,7 +83,7 @@
                                 <div id="regen-popup" class="regen-popup" hidden>
                                     <div class="regen-popup-content">
                                         <h2>Regenerate Image</h2>
-                                        <textarea id="reprompt-text-{{image.pk}}" class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5>
+                                        <textarea id="reprompt-text-{{image.pk}}" class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5></textarea>
 
                                         <button 
                                             class="attach-reference-btn"
@@ -238,6 +238,7 @@
  
         document.querySelectorAll(".accept-btn").forEach(button => {
             button.addEventListener("click", () => {
+                console.log("Accept Button clicked!")
                 reviewImage(button)
                 const reviewSection = button.closest("[name='user-review']")
                 const rejectDescription = reviewSection.querySelector(".rejected-description")

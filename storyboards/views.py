@@ -77,6 +77,7 @@ def storyboard_view(request, blueprint_pk):
 
 
 def accept_image(request, pk):
+    print("DEBUG: Accept Image")
     image = get_object_or_404(Image, pk=pk)
     image_stack = Image.objects.filter(image_stack=image.image_stack)
     existing_approved = image_stack.filter(review_status=Image.ReviewStatus.APPROVED).exclude(pk=image.pk).first()
