@@ -60,49 +60,46 @@
                                 <button class="reject-btn" data-url="{% url 'reject_image' pk=image.pk%}" type="button">
                                     Reject
                                 </button>
-
-                                <!-- REVIEW NOTE -->
-                                <div class="review-note-container" data-content="{{image.review_note}}" hidden>
-                                    <label for="review-note-content-{{image.pk}}">Why was this rejected?</label>
-                                    <textarea class="review-note-textarea" id="review-note-content-{{image.pk}}" rows=3></textarea>
-                                    <button 
-                                        class="submit-review-note"
-                                        data-url="{% url 'reject_description' pk=image.pk%}"
-                                        type="button">
-                                        submit
-                                    </button>
-                                </div>
-                                
                             </div>
-                            <!-- image reprompt -->
-                            <div class="image-regen-container" hidden>
-                                <button class="reveal-image-regen" type="button">
+                          <!-- REVIEW NOTE -->
+                            <div class="review-note-container" data-content="{{image.review_note}}" hidden>
+                                <label for="review-note-content-{{image.pk}}">Why was this rejected?</label>
+                                <textarea class="review-note-textarea" id="review-note-content-{{image.pk}}" rows=3></textarea>
+                                <button 
+                                    class="submit-review-note"
+                                    data-url="{% url 'reject_description' pk=image.pk%}"
+                                    type="button">
+                                    submit
+                                </button>
+                            </div>
+                            <!-- REGENERATE -->
+                            <div class="image-regen-parent-container" hidden>
+                                <button class="reveal-image-regen-btn" type="button">
                                     Generate New Image
                                 </button>
-                                <div class="regen-popup-container" hidden>
-                                    <div class="regen-popup">
+                                <div class="image-regen-popup" hidden>
+                                    <div class="regen-form">
                                         <h2>Regenerate Image</h2>
                                         <textarea class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5></textarea>
 
-                                        <button 
+                                        <div class="reference-image-container">
+                                            <button 
                                             class="attach-reference-btn"
                                             type="button">
-                                            Attach reference photos
-                                        </button>
+                                            Attach Reference Photos
+                                            </button>
 
-                                        <div class="reference-selector" hidden>
-                                            {% for ref_image in available_reference_images %}
-                                                <div class="reference-option" data-id="{{ref_image.pk}}">
-                                                    <img src="{{ref_image.image_file.url}}">
-                                                </div>
-                                            {% endfor %}
+                                            <div class="reference-image-selector" hidden>
+                                                {% for ref_image in available_reference_images %}
+                                                    <div class="reference-image" data-id="{{ref_image.pk}}" data-selected="false">
+                                                        <img src="{{ref_image.image_file.url}}">
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+
                                         </div>
-
-
-                                        {% comment %} <button class="submit-reprompt-btn" data-url="{% url 'reprompt_image' pk=image.pk %}" data-id="{{image.pk}}"></button> {% endcomment %}
-                                        <button class="close-popup-btn" type="button">
-                                            Close
-                                        </button>
+                                        
+                                        <button class="submit-regen-btn" data-url="{% url 'regen_image' pk=image.pk %}"></button> 
                                     </div>
                                 </div>
                             </div>
@@ -118,68 +115,66 @@
 
     <script>
 
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;            
 
-        document.querySelectorAll(".submit-reprompt-btn").forEach(button => {
-            button.addEventListener("click", async () => {
-                const value = document.querySelector(`#reprompt-text-${button.dataset.id}`).value
-                const url = button.dataset.url
-                const imageID = button.dataset.id
-     
-                response = await fetch(
-                    url, {
+
+        // Event Listeners
+
+        document.querySelectorAll(".image-regen-parent-container").forEach(container => {
+            const revealBtn = container.querySelector(".reveal-image-regen-btn")
+            const popUp = container.querySelector(".image-regen-popup")
+            revealBtn.addEventListener("click", () => {
+                popUp.hidden = !popUp.hidden
+                popUp.textContent = popUp.hidden ? "Generate New Image" : "close"
+            })
+
+            const selector = container.querySelector(".reference-image-selector")
+            const referenceImages = selector.querySelectorAll(".reference-image")
+            const selectedReferenceImages = []
+            referenceImages.forEach(image => {
+                image.addEventListener("click", () => {
+                    const imgId = image.dataset.id
+                    if (image.dataset.selected == "false") {
+                        image.dataset.selected = "true"
+                        selectedReferenceImages.push(imgId)
+                    } else {
+                        image.dataset.selected = "false";
+                        const index = selectedReferenceImages.indexOf(imgId);
+                        if (index !== -1) {
+                            selectedReferenceImages.splice(index, 1);
+                        }
+                    }
+                })
+            })
+
+            const subBtn = container.querySelector(".submit-regen-btn")
+            subBtn.addEventListener("click", () => {
+                const reprompt = container.querySelector(".reprompt-textarea").value
+                if (!reprompt) return
+
+                fetch(url, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": csrftoken,
-                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        "reprompt": value,
+                        reprompt: reprompt,
+                        reference_images: selectedReferenceImages
                     })
-                });
-                if (response.ok) {
-                    const data = await response.json()
-                    const oldCard = document.querySelector(`#image-${imageID}`)
-                    const textarea = oldCard.querySelector(".reprompt-textarea");
-                    const repromptButton = oldCard.querySelector(".submit-reprompt-btn");
-                    oldCard.id = `image-${data.id}`
-                    oldCard.querySelector("img").src = data.image_url
-                    oldCard.querySelector(".accept-btn").dataset.url = data.accept_url;
-                    oldCard.querySelector(".reject-btn").dataset.url = data.reject_url;
-                    textarea.id = `reprompt-text-${data.id}`;
-                    repromptButton.dataset.id = data.id;
-                    repromptButton.dataset.url = data.reprompt_url;
-                }
+                }).catch(err => {
+                console.error(err)
+                // maybe show an error message to the user
             })
-        })
-            
+        }))
 
-        document.querySelectorAll(".image-reprompt").forEach(popup => {
-            const card = popup.closest(".image-card")
-            if (card.classList.contains("approved")) {
-                popup.hidden = true
-            } else {
-                popup.hidden = !popup.hidden
-            }
-        })
-        
-        document.querySelectorAll(".close-popup-btn").forEach(button => {
+
+
+        document.querySelectorAll(".submit-review-note").forEach(button => {
             button.addEventListener("click", () => {
-                const popUp = button.closest(".regen-popup-content").parentElement
-                popUp.hidden = true
-            })
-
-        })
-
-        document.querySelectorAll("#open-regen-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                const regenParent = button.closest(".image-reprompt")
-                const regenPopUp = regenParent.querySelector(".regen-popup")
-                regenPopUp.hidden = !regenPopUp.hidden
+                reviewNoteSubmission(button)
             })
         })
-
-        // Event Listeners
 
         document.querySelectorAll(".accept-btn").forEach(button => {
             button.addEventListener("click", () => {
@@ -194,11 +189,6 @@
 
         });
 
-        document.querySelectorAll(".submit-review-note").forEach(button => {
-            button.addEventListener("click", () => {
-                reviewNoteSubmission(button)
-            })
-        })
 
         // functions
 
@@ -220,13 +210,10 @@
             })
 
             const data = await response.json()
-            const savedContent = data.content
-
-            container.dataset.content = savedContent
+            container.dataset.content = data.content
 
             const card = container.closest(".image-card")
             updateReviewNote(card)
-
         }
 
         async function reviewImage(button) {
@@ -281,11 +268,11 @@
         }
 
         function updateRegenerateWindow(card) {
-            const regenWindow = card.querySelector(".image-regen")
-            if  (!regenWindow) return
+            const regenContainer = card.querySelector(".image-regen-container")
+            if  (!regenContainer) return
             const isApproved = card.dataset.status == "approved"
 
-            regenWindow.hidden = isApproved
+            regenContainer.hidden = isApproved
         }
 
         function updateCard(card) {
