@@ -50,8 +50,7 @@
                 <div class="image-stack" id="character-stack-{{sheet.id}}">
                     {% for image in sheet.images %}
                     <!-- make first card cover -->
-                        <div class="image-card {% if image.review_status == 'approved' %}approved{% elif image.review_status == 'rejected' %}rejected{% endif %}"
-                        id="image-{{image.pk}}">
+                        <div class="image-card" id="image-{{image.pk}}" data-status="{{image.review_status}}">
                             <img src="{{ image.image_file.url }}">
                             <div name="user-review">
                                 <button class="accept-btn" data-url="{% url 'accept_image' pk=image.pk %}" type="button">
@@ -61,29 +60,29 @@
                                 <button class="reject-btn" data-url="{% url 'reject_image' pk=image.pk%}" type="button">
                                     Reject
                                 </button>
-                                <div class="rejected-description" hidden>
-                                    <label for="reason-{{image.pk}}">Why was this rejected?</label>
-                                    <textarea name="reason" id="reason-{{image.pk}}" rows=3></textarea>
+
+                                <!-- REVIEW NOTE -->
+                                <div class="review-note-container" data-content="{{image.review_note}}" hidden>
+                                    <label for="review-note-content-{{image.pk}}">Why was this rejected?</label>
+                                    <textarea class="review-note-textarea" id="review-note-content-{{image.pk}}" rows=3></textarea>
                                     <button 
-                                        class="submit-rejection-description-btn"
-                                        data-url="{% url 'reject_image' pk=image.pk%}"
-                                        data-image="{{image.pk}}"
+                                        class="submit-review-note"
+                                        data-url="{% url 'reject_description' pk=image.pk%}"
                                         type="button">
                                         submit
                                     </button>
-
                                 </div>
                                 
                             </div>
                             <!-- image reprompt -->
-                            <div class="image-reprompt" hidden>
-                                <button id="open-regen-btn" type="button">
+                            <div class="image-regen-container" hidden>
+                                <button class="reveal-image-regen" type="button">
                                     Generate New Image
                                 </button>
-                                <div id="regen-popup" class="regen-popup" hidden>
-                                    <div class="regen-popup-content">
+                                <div class="regen-popup-container" hidden>
+                                    <div class="regen-popup">
                                         <h2>Regenerate Image</h2>
-                                        <textarea id="reprompt-text-{{image.pk}}" class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5></textarea>
+                                        <textarea class="reprompt-textarea" type="text" placeholder="reprompt the ai" rows=5></textarea>
 
                                         <button 
                                             class="attach-reference-btn"
@@ -118,6 +117,7 @@
     </div>
 
     <script>
+
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         document.querySelectorAll(".submit-reprompt-btn").forEach(button => {
@@ -179,21 +179,54 @@
             })
         })
 
-        async function rejectDescription(button) {
-            const imageId = button.dataset.image
-            const url = button.dataset.url
+        // Event Listeners
 
-            const reason = document.querySelector(`#reason-${imageId}`).value
-            fetch(url, {
+        document.querySelectorAll(".accept-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                reviewImage(button)
+            })
+        })
+
+        document.querySelectorAll(".reject-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                reviewImage(button)
+            });
+
+        });
+
+        document.querySelectorAll(".submit-review-note").forEach(button => {
+            button.addEventListener("click", () => {
+                reviewNoteSubmission(button)
+            })
+        })
+
+        // functions
+
+        async function reviewNoteSubmission(button) {
+            const url = button.dataset.url
+            const container = button.closest(".review-note-container")
+            const textarea = container.querySelector(".review-note-textarea")
+            const content = textarea.value 
+
+            const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": csrftoken,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    reason: reason,
+                    review_note: content,
                 })
             })
+
+            const data = await response.json()
+            const savedContent = data.content
+
+            container.dataset.content = savedContent
+
+            const card = container.closest(".image-card")
+            updateReviewNote(card)
+
         }
 
         async function reviewImage(button) {
@@ -207,57 +240,64 @@
                 });
                 if (response.ok) {
                     const data = await response.json()
-                    const card = document.querySelector(`#image-${data.id}`);
-                    card.classList.remove("approved", "rejected");
-                    card.classList.add(data.status);
+                    const card = button.closest(".image-card");
+                    const stack = card.closest(".image-stack")
+        
+                    if (!card) {
+                        console.error("Image card not found", data.id);
+                        return;
+                    }
                     if (data.change_card_id) {
                         const update_card = document.querySelector(`#image-${data.change_card_id}`);
-                        update_card.classList.remove("approved", "rejected")
+                        update_card.dataset.status = "pending"
+                        updateCard(update_card)
                     }
-                    const regenPopUp = card.querySelector(".image-reprompt")
-                    // update stack order
-                    const stack = card.closest(".image-stack")
+
+                    card.dataset.status = data.status;
+                    
                     if (data.status == "approved") {
                         stack.prepend(card)
-                        regenPopUp.hidden = true
 
-                    } else {
+                    } else if (data.status == "rejected"){
                         stack.append(card)
-                        regenPopUp.hidden = !regenPopUp.hidden
                     }
+
+                    updateCard(card)
+
                 } else {
                     alert("Failed to accept image")
                 }
         };
 
-        document.querySelectorAll(".submit-rejection-description-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                rejectDescription(button)
+        function updateReviewNote(card) {
+            const rejectDescription = card.querySelector(".review-note-container")
+            if (!rejectDescription) return
+
+            const reviewNote = rejectDescription.dataset.content
+            const isRejected = card.dataset.status == "rejected"
+
+            rejectDescription.hidden = !(isRejected && !reviewNote)
+
+        }
+
+        function updateRegenerateWindow(card) {
+            const regenWindow = card.querySelector(".image-regen")
+            if  (!regenWindow) return
+            const isApproved = card.dataset.status == "approved"
+
+            regenWindow.hidden = isApproved
+        }
+
+        function updateCard(card) {
+            updateReviewNote(card)
+            updateRegenerateWindow(card)
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".image-card").forEach(card => {
+                updateCard(card)
             })
         })
- 
-        document.querySelectorAll(".accept-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                console.log("Accept Button clicked!")
-                reviewImage(button)
-                const reviewSection = button.closest("[name='user-review']")
-                const rejectDescription = reviewSection.querySelector(".rejected-description")
-                rejectDescription.hidden = true
-            })
-        })
-
-        document.querySelectorAll(".reject-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                reviewImage(button)
-                const reviewSection = button.closest("[name='user-review']")
-                const rejectDescription = reviewSection.querySelector(".rejected-description")
-                rejectDescription.hidden = !rejectDescription.hidden
-            });
-
-        });
-
-
-
 
                 
     </script>

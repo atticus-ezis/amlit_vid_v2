@@ -116,3 +116,9 @@ def reject_image(request, pk):
         "id": image.pk,
         "image_stack_id": image.image_stack.id,
     })
+
+def reject_description(request, pk):
+    print(f"description for id: {pk}")
+    return JsonResponse({
+        "TEST SUCCESS"
+    })
