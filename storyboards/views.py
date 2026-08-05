@@ -120,5 +120,14 @@ def reject_image(request, pk):
 def reject_description(request, pk):
     print(f"description for id: {pk}")
     return JsonResponse({
-        "TEST SUCCESS"
+        "REJECT NOTE SUCCESS"
+    })
+
+def regen_image(request, pk):
+    body = json.loads(request.body)
+    reprompt = body.get("reprompt")
+    image_ids = body.get("reference_images")
+    print(f"REPROMPT: {reprompt}, ids: {image_ids}")
+    return JsonResponse({
+        "REGEN SUCCESS"
     })

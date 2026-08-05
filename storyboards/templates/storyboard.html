@@ -94,6 +94,8 @@
                                                         <img src="{{ref_image.image_file.url}}">
                                                     </div>
                                                 {% endfor %}
+                                                <button class="close-reference-images">cancel</button> 
+                                                <button class="submit-reference-images">finish</button>  
                                             </div>
 
                                         </div>
@@ -116,9 +118,7 @@
 
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;            
 
-
         // Event Listeners
-
         document.querySelectorAll(".image-regen-parent-container").forEach(container => {
             const revealBtn = container.querySelector(".reveal-image-regen-btn")
             const popUp = container.querySelector(".image-regen-popup")
@@ -126,8 +126,13 @@
                 popUp.hidden = !popUp.hidden
                 popUp.textContent = popUp.hidden ? "Generate New Image" : "close"
             })
-
+            // show ref images
             const selector = container.querySelector(".reference-image-selector")
+            const referencePopUpBtn = container.querySelector(".attach-reference-btn")
+            referencePopUpBtn.addEventListener("click", () => {
+                selector.hidden = false
+            })
+            // select images
             const referenceImages = selector.querySelectorAll(".reference-image")
             const selectedReferenceImages = []
             referenceImages.forEach(image => {
@@ -145,13 +150,23 @@
                     }
                 })
             })
-
+            // exit selected images
+            const closeSelector = container.querySelector(".close-reference-images")
+            closeSelector.addEventListener("click", () => {
+                selectedReferenceImages.length = 0
+                selector.hidden = true
+            })
+            const submitReferences = container.querySelector(".submit-reference-images")
+            submitReferences.addEventListener("click", () => {
+                selector.hidden = true
+            })
+            // submit
             const subBtn = container.querySelector(".submit-regen-btn")
             subBtn.addEventListener("click", () => {
                 const reprompt = container.querySelector(".reprompt-textarea").value
                 if (!reprompt) return
 
-                fetch(url, {
+                fetch(subBtn.dataset.url, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": csrftoken,
@@ -165,7 +180,7 @@
                 console.error(err)
                 // maybe show an error message to the user
             })
-        }))
+        })})
 
         document.querySelectorAll(".submit-review-note").forEach(button => {
             button.addEventListener("click", () => {
