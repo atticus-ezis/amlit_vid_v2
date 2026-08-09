@@ -256,7 +256,7 @@
                 card.dataset.status = data.status;
                 
                 if (data.status == "approved") {
-                    stack.prepend(card)true
+                    stack.prepend(card)
 
                 } else if (data.status == "rejected") {
                     stack.append(card)
@@ -294,7 +294,7 @@
             if (status == "approved") {
                 acceptBtn.hidden = true
                 rejectBtn.hidden = false
-            } elif (status == "rejected") {
+            } else if (status == "rejected") {
                 acceptBtn.hidden = false
                 rejectBtn.hidden = true
             } else {

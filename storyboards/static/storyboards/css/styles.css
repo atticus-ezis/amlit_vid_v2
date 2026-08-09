@@ -3,12 +3,12 @@
     padding: 10px;
 }
 
-.image-card.approved {
+.image-card[data-status="approved"] {
     border-color: green;
 
 }
 
-.image-card.rejected {
+.image-card[data-status="rejected"] {
     border-color: red;
 
 }
